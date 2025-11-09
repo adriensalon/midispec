@@ -17,7 +17,9 @@
 #error "Define SYSEX_TEST_OUT_MIDIPORT (output port index)"
 #endif
 
-struct sysex_hardware : public testing::Test {
+namespace sysex {
+
+struct hardware : public testing::Test {
 
     static void SetUpTestSuite()
     {
@@ -42,7 +44,7 @@ struct sysex_hardware : public testing::Test {
         s_in->openPort(SYSEX_TEST_IN_MIDIPORT);
         // Receive SysEx, ignore timing & active sense
         s_in->ignoreTypes(/*sysex*/ false, /*timing*/ true, /*sensing*/ true);
-        s_in->setCallback(&sysex_hardware::midi_in_cb, nullptr);
+        s_in->setCallback(&hardware::midi_in_cb, nullptr);
     }
 
     static void TearDownTestSuite()
@@ -64,10 +66,11 @@ struct sysex_hardware : public testing::Test {
     }
 
 protected:
-    static void send(const std::vector<std::uint8_t>& bytes)
+    static void send(std::vector<std::uint8_t>& bytes)
     {
         std::vector<unsigned char> msg(bytes.begin(), bytes.end());
         s_out->sendMessage(&msg);
+        bytes.clear();
     }
 
     static bool receive(std::vector<unsigned char>& out, int timeout_ms = 5000)
@@ -138,3 +141,4 @@ private:
     inline static std::deque<std::vector<unsigned char>> s_queue;
     inline static bool s_stop;
 };
+}
