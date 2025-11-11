@@ -21,8 +21,10 @@ namespace yamaha_spx90 {
             if ((encoded[0] & 0xF0) != 0x80) {
                 return false;
             }
+
             channel = encoded[0] & 0x0F;
             note = encoded[1] & 0x7F;
+
             return true;
         }
 
@@ -37,8 +39,10 @@ namespace yamaha_spx90 {
             if ((encoded[0] & 0xF0) != 0x90) {
                 return false;
             }
+
             channel = encoded[0] & 0x0F;
             note = encoded[1] & 0x7F;
+
             return true;
         }
 
@@ -53,8 +57,10 @@ namespace yamaha_spx90 {
             if ((encoded[0] & 0xF0) != 0xC0) {
                 return false;
             }
+
             channel = encoded[0] & 0x0F;
             program = encoded[1] & 0x7F;
+
             return true;
         }
     };
@@ -71,7 +77,7 @@ namespace yamaha_spx90 {
 
             _note = _note.from_random(random_device);
             encode_note_off(_encoded, _channel, _note);
-            decode_note_off(_encoded, _received_channel, _received_note);
+            EXPECT_TRUE(decode_note_off(_encoded, _received_channel, _received_note));
             EXPECT_EQ(_channel, _received_channel);
             EXPECT_EQ(_note, _received_note);
         }
@@ -86,7 +92,7 @@ namespace yamaha_spx90 {
 
             _note = _note.from_random(random_device);
             encode_note_on(_encoded, _channel, _note);
-            decode_note_on(_encoded, _received_channel, _received_note);
+            EXPECT_TRUE(decode_note_on(_encoded, _received_channel, _received_note));
             EXPECT_EQ(_channel, _received_channel);
             EXPECT_EQ(_note, _received_note);
         }
@@ -101,7 +107,7 @@ namespace yamaha_spx90 {
 
             _program = _program.from_random(random_device);
             encode_program_change(_encoded, _channel, _program);
-            decode_program_change(_encoded, _received_channel, _received_program);
+            EXPECT_TRUE(decode_program_change(_encoded, _received_channel, _received_program));
             EXPECT_EQ(_channel, _received_channel);
             EXPECT_EQ(_program, _received_program);
         }

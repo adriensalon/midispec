@@ -16,7 +16,7 @@ namespace yamaha_dx7 {
 
     namespace channel_voice {
 
-        /// @brief Encodes a note off message.
+        /// @brief Encodes a note off message
         /// @param encoded Vector to append the encoded message to
         /// @param channel Target channel number. In range [0, 15]
         /// @param note MIDI note. In range [0, 127]
@@ -25,7 +25,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> channel,
             const integral<std::uint8_t, 0, 127> note);
 
-        /// @brief Encodes a note on message.
+        /// @brief Encodes a note on message
         /// @param encoded Vector to append the encoded message to
         /// @param channel Target channel number. In range [0, 15]
         /// @param note MIDI note. In range [0, 127]
@@ -36,7 +36,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 127> note,
             const integral<std::uint8_t, 0, 127> velocity);
 
-        /// @brief Encodes a program change message.
+        /// @brief Encodes a program change message
         /// @param encoded Vector to append the encoded message to
         /// @param channel Target channel number. In range [0, 15]
         /// @param program MIDI program clamped for the DX7. In range [0, 31]
@@ -45,7 +45,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> channel,
             const integral<std::uint8_t, 0, 31> program);
 
-        /// @brief Encodes a pitch bend change message.
+        /// @brief Encodes a pitch bend change message
         /// @param encoded Vector to append the encoded message to
         /// @param channel Target channel number. In range [0, 15]
         /// @param pitch_bend MIDI pitch bend. In range [0, 16383] (Default 8192)
@@ -54,7 +54,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> channel,
             const integral<std::uint16_t, 0, 16383, 8192> pitch_bend);
 
-        /// @brief Decodes a note off message.
+        /// @brief Decodes a note off message
         /// @param encoded Vector to read the encoded message from
         /// @param channel Target channel number. In range [0, 15]
         /// @param note MIDI note. In range [0, 127]
@@ -64,7 +64,7 @@ namespace yamaha_dx7 {
             integral<std::uint8_t, 0, 15>& channel,
             integral<std::uint8_t, 0, 127>& note);
 
-        /// @brief Decodes a note on message.
+        /// @brief Decodes a note on message
         /// @param encoded Vector to read the encoded message from
         /// @param channel Target channel number. In range [0, 15]
         /// @param note MIDI note. In range [0, 127]
@@ -76,7 +76,7 @@ namespace yamaha_dx7 {
             integral<std::uint8_t, 0, 127>& note,
             integral<std::uint8_t, 0, 127>& velocity);
 
-        /// @brief Decodes a program change message.
+        /// @brief Decodes a program change message
         /// @param encoded Vector to read the encoded message from
         /// @param channel Target channel number. In range [0, 15]
         /// @param program MIDI program clamped for the DX7. In range [0, 31]
@@ -86,7 +86,7 @@ namespace yamaha_dx7 {
             integral<std::uint8_t, 0, 15>& channel,
             integral<std::uint8_t, 0, 31>& program);
 
-        /// @brief Decodes a channel pressure (mono after touch) message.
+        /// @brief Decodes a channel pressure (mono after touch) message
         /// @param encoded Vector to read the encoded message from
         /// @param channel Target channel number. In range [0, 15]
         /// @param program Nonstandard MIDI channel pressure. In range [0, 127]
@@ -96,7 +96,7 @@ namespace yamaha_dx7 {
             integral<std::uint8_t, 0, 15>& channel,
             integral<std::uint8_t, 0, 127>& pressure);
 
-        /// @brief Decodes a pitch bend change message.
+        /// @brief Decodes a pitch bend change message
         /// @param encoded Vector to read the encoded message from
         /// @param channel Target channel number. In range [0, 15]
         /// @param pitch_bend MIDI pitch bend. In range [0, 16383] (Default 8192)

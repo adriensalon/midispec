@@ -11,11 +11,12 @@ namespace akai_mpx8 {
         void encode_note_off(
             std::vector<std::uint8_t>& encoded,
             const integral<std::uint8_t, 0, 15> channel,
-            const integral<std::uint8_t, 0, 127> note)
+            const integral<std::uint8_t, 0, 127> note,
+            const integral<std::uint8_t, 0, 127> velocity)
         {
             encoded.push_back(0x80 | (channel.value() & 0x0F));
             encoded.push_back(note.value() & 0x7F);
-            encoded.push_back(0x00);
+            encoded.push_back(velocity.value() & 0x7F);
         }
 
         void encode_note_on(
@@ -32,7 +33,8 @@ namespace akai_mpx8 {
         bool decode_note_off(
             const std::vector<std::uint8_t>& encoded,
             integral<std::uint8_t, 0, 15>& channel,
-            integral<std::uint8_t, 0, 127>& note)
+            integral<std::uint8_t, 0, 127>& note,
+            integral<std::uint8_t, 0, 127>& velocity)
         {
             if (encoded.size() != 3) {
                 return false;
@@ -43,6 +45,7 @@ namespace akai_mpx8 {
 
             channel = encoded[0] & 0x0F;
             note = encoded[1] & 0x7F;
+            velocity = encoded[2] & 0x7F;
 
             return true;
         }
@@ -150,7 +153,7 @@ namespace akai_mpx8 {
                 }
                 manufacturer = (static_cast<std::uint32_t>(encoded[_index]) << 16) | (static_cast<std::uint32_t>(encoded[_index + 1]) << 8) | static_cast<std::uint32_t>(encoded[_index + 2]);
                 _index += 3;
-                
+
             } else {
                 if (encoded.size() < _index + 1 + 2 + 2 + 4 + 1) {
                     return false;

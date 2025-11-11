@@ -54,7 +54,7 @@ namespace yamaha_dx7 {
             system_exclusive::encode_button_yes(_sent, device, false);
             send(_sent);
 
-            receive(_received);
+            EXPECT_TRUE(receive(_received));
             EXPECT_TRUE(system_exclusive::decode_bank(_received, _received_device, _bank));
             EXPECT_EQ(device, _received_device);
             data = _bank[voice.value()];
@@ -73,7 +73,7 @@ namespace yamaha_dx7 {
 
             _note = _note.from_random(random_device);
             encode_note_off(_encoded, _channel, _note);
-            decode_note_off(_encoded, _received_channel, _received_note);
+            EXPECT_TRUE(decode_note_off(_encoded, _received_channel, _received_note));
             EXPECT_EQ(_channel, _received_channel);
             EXPECT_EQ(_note, _received_note);
         }
@@ -91,7 +91,7 @@ namespace yamaha_dx7 {
             _note = _note.from_random(random_device);
             _velocity = _velocity.from_random(random_device);
             encode_note_on(_encoded, _channel, _note, _velocity);
-            decode_note_on(_encoded, _received_channel, _received_note, _received_velocity);
+            EXPECT_TRUE(decode_note_on(_encoded, _received_channel, _received_note, _received_velocity));
             EXPECT_EQ(_channel, _received_channel);
             EXPECT_EQ(_note, _received_note);
             EXPECT_EQ(_velocity, _received_velocity);
@@ -107,7 +107,7 @@ namespace yamaha_dx7 {
 
             _program = _program.from_random(random_device);
             encode_program_change(_encoded, _channel, _program);
-            decode_program_change(_encoded, _received_channel, _received_program);
+            EXPECT_TRUE(decode_program_change(_encoded, _received_channel, _received_program));
             EXPECT_EQ(_channel, _received_channel);
             EXPECT_EQ(_program, _received_program);
         }
@@ -122,7 +122,7 @@ namespace yamaha_dx7 {
 
             _pitch_bend = _pitch_bend.from_random(random_device);
             encode_pitch_bend_change(_encoded, _channel, _pitch_bend);
-            decode_pitch_bend_change(_encoded, _received_channel, _received_pitch_bend);
+            EXPECT_TRUE(decode_pitch_bend_change(_encoded, _received_channel, _received_pitch_bend));
             EXPECT_EQ(_channel, _received_channel);
             EXPECT_EQ(_pitch_bend, _received_pitch_bend);
         }

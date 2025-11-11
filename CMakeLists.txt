@@ -17,6 +17,11 @@ target_link_libraries(midispec_test INTERFACE midispec GTest::gtest_main rtmidi)
 target_compile_definitions(midispec_test INTERFACE -DSYSEX_TEST_IN_MIDIPORT=0)
 target_compile_definitions(midispec_test INTERFACE -DSYSEX_TEST_OUT_MIDIPORT=1)
 
+# midispec_test [Akai LPK25]
+add_executable(midispec_test_akai_lpk25 "test/test_akai_lpk25.cpp")
+set_target_properties(midispec_test_akai_lpk25 PROPERTIES CXX_STANDARD 17)
+target_link_libraries(midispec_test_akai_lpk25 PRIVATE midispec_test)
+
 # midispec_test [Akai MPX8]
 add_executable(midispec_test_akai_mpx8 "test/test_akai_mpx8.cpp")
 set_target_properties(midispec_test_akai_mpx8 PROPERTIES CXX_STANDARD 17)
