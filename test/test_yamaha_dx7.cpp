@@ -6,16 +6,6 @@
 namespace midispec {
 namespace yamaha_dx7 {
 
-    static bool operator==(const patch& first, const patch& second)
-    {
-        return (first.op_envelope_generator_rate_1 == second.op_envelope_generator_rate_1) && (first.op_envelope_generator_rate_2 == second.op_envelope_generator_rate_2) && (first.op_envelope_generator_rate_3 == second.op_envelope_generator_rate_3) && (first.op_envelope_generator_rate_4 == second.op_envelope_generator_rate_4) && (first.op_envelope_generator_level_1 == second.op_envelope_generator_level_1) && (first.op_envelope_generator_level_2 == second.op_envelope_generator_level_2) && (first.op_envelope_generator_level_3 == second.op_envelope_generator_level_3) && (first.op_envelope_generator_level_4 == second.op_envelope_generator_level_4) && (first.op_keyboard_scaling_breakpoint == second.op_keyboard_scaling_breakpoint) && (first.op_keyboard_scaling_left_depth == second.op_keyboard_scaling_left_depth) && (first.op_keyboard_scaling_right_depth == second.op_keyboard_scaling_right_depth) && (first.op_keyboard_scaling_left_curve == second.op_keyboard_scaling_left_curve) && (first.op_keyboard_scaling_right_curve == second.op_keyboard_scaling_right_curve) && (first.op_keyboard_scaling_rate == second.op_keyboard_scaling_rate) && (first.op_amplitude_modulation_sensitivity == second.op_amplitude_modulation_sensitivity) && (first.op_velocity_sensitivity == second.op_velocity_sensitivity) && (first.op_output_level == second.op_output_level) && (first.op_oscillator_mode == second.op_oscillator_mode) && (first.op_oscillator_coarse == second.op_oscillator_coarse) && (first.op_oscillator_fine == second.op_oscillator_fine) && (first.op_oscillator_detune == second.op_oscillator_detune) && (first.pitch_envelope_rate_1 == second.pitch_envelope_rate_1) && (first.pitch_envelope_rate_2 == second.pitch_envelope_rate_2) && (first.pitch_envelope_rate_3 == second.pitch_envelope_rate_3) && (first.pitch_envelope_rate_4 == second.pitch_envelope_rate_4) && (first.pitch_envelope_level_1 == second.pitch_envelope_level_1) && (first.pitch_envelope_level_2 == second.pitch_envelope_level_2) && (first.pitch_envelope_level_3 == second.pitch_envelope_level_3) && (first.pitch_envelope_level_4 == second.pitch_envelope_level_4) && (first.algorithm_mode == second.algorithm_mode) && (first.algorithm_feedback == second.algorithm_feedback) && (first.oscillator_key_sync == second.oscillator_key_sync) && (first.lfo_waveform == second.lfo_waveform) && (first.lfo_speed == second.lfo_speed) && (first.lfo_delay == second.lfo_delay) && (first.lfo_pitch_modulation_depth == second.lfo_pitch_modulation_depth) && (first.lfo_amplitude_modulation_depth == second.lfo_amplitude_modulation_depth) && (first.lfo_sync == second.lfo_sync) && (first.pitch_modulation_sensitivity == second.pitch_modulation_sensitivity) && (first.transpose_semitones == second.transpose_semitones) && (first.patch_name == second.patch_name);
-    }
-
-    static bool operator!=(const patch& first, const patch& second)
-    {
-        return !(first == second);
-    }
-
     struct yamaha_dx7 : public hardware {
 
         inline static std::mt19937 random_device;
@@ -42,7 +32,7 @@ namespace yamaha_dx7 {
         {
             std::vector<std::uint8_t> _sent;
             std::vector<std::uint8_t> _received;
-            std::array<patch, 32> _bank;
+            std::array<system_exclusive::patch, 32> _bank;
             integral<std::uint8_t, 0, 15> _received_device;
 
             system_exclusive::encode_button_function(_sent, device, true);
@@ -71,7 +61,84 @@ namespace yamaha_dx7 {
         }
     };
 
+    namespace channel_voice {
+
+        TEST_F(yamaha_dx7, note_off)
+        {
+            std::vector<std::uint8_t> _encoded;
+            integral<std::uint8_t, 0, 15> _channel = 0;
+            integral<std::uint8_t, 0, 15> _received_channel;
+            integral<std::uint8_t, 0, 127> _note;
+            integral<std::uint8_t, 0, 127> _received_note;
+
+            _note = _note.from_random(random_device);
+            encode_note_off(_encoded, _channel, _note);
+            decode_note_off(_encoded, _received_channel, _received_note);
+            EXPECT_EQ(_channel, _received_channel);
+            EXPECT_EQ(_note, _received_note);
+        }
+
+        TEST_F(yamaha_dx7, note_on)
+        {
+            std::vector<std::uint8_t> _encoded;
+            integral<std::uint8_t, 0, 15> _channel = 0;
+            integral<std::uint8_t, 0, 15> _received_channel;
+            integral<std::uint8_t, 0, 127> _note;
+            integral<std::uint8_t, 0, 127> _velocity;
+            integral<std::uint8_t, 0, 127> _received_note;
+            integral<std::uint8_t, 0, 127> _received_velocity;
+
+            _note = _note.from_random(random_device);
+            _velocity = _velocity.from_random(random_device);
+            encode_note_on(_encoded, _channel, _note, _velocity);
+            decode_note_on(_encoded, _received_channel, _received_note, _received_velocity);
+            EXPECT_EQ(_channel, _received_channel);
+            EXPECT_EQ(_note, _received_note);
+            EXPECT_EQ(_velocity, _received_velocity);
+        }
+
+        TEST_F(yamaha_dx7, program_change)
+        {
+            std::vector<std::uint8_t> _encoded;
+            integral<std::uint8_t, 0, 15> _channel = 0;
+            integral<std::uint8_t, 0, 15> _received_channel;
+            integral<std::uint8_t, 0, 127> _program;
+            integral<std::uint8_t, 0, 127> _received_program;
+
+            _program = _program.from_random(random_device);
+            encode_program_change(_encoded, _channel, _program);
+            decode_program_change(_encoded, _received_channel, _received_program);
+            EXPECT_EQ(_channel, _received_channel);
+            EXPECT_EQ(_program, _received_program);
+        }
+
+        TEST_F(yamaha_dx7, pitch_bend_change)
+        {
+            std::vector<std::uint8_t> _encoded;
+            integral<std::uint8_t, 0, 15> _channel = 0;
+            integral<std::uint8_t, 0, 15> _received_channel;
+            integral<std::uint16_t, 0, 16383, 8192> _pitch_bend;
+            integral<std::uint16_t, 0, 16383, 8192> _received_pitch_bend;
+
+            _pitch_bend = _pitch_bend.from_random(random_device);
+            encode_pitch_bend_change(_encoded, _channel, _pitch_bend);
+            decode_pitch_bend_change(_encoded, _received_channel, _received_pitch_bend);
+            EXPECT_EQ(_channel, _received_channel);
+            EXPECT_EQ(_pitch_bend, _received_pitch_bend);
+        }
+    }
+
     namespace system_exclusive {
+
+        static bool operator==(const patch& first, const patch& second)
+        {
+            return (first.op_envelope_generator_rate_1 == second.op_envelope_generator_rate_1) && (first.op_envelope_generator_rate_2 == second.op_envelope_generator_rate_2) && (first.op_envelope_generator_rate_3 == second.op_envelope_generator_rate_3) && (first.op_envelope_generator_rate_4 == second.op_envelope_generator_rate_4) && (first.op_envelope_generator_level_1 == second.op_envelope_generator_level_1) && (first.op_envelope_generator_level_2 == second.op_envelope_generator_level_2) && (first.op_envelope_generator_level_3 == second.op_envelope_generator_level_3) && (first.op_envelope_generator_level_4 == second.op_envelope_generator_level_4) && (first.op_keyboard_scaling_breakpoint == second.op_keyboard_scaling_breakpoint) && (first.op_keyboard_scaling_left_depth == second.op_keyboard_scaling_left_depth) && (first.op_keyboard_scaling_right_depth == second.op_keyboard_scaling_right_depth) && (first.op_keyboard_scaling_left_curve == second.op_keyboard_scaling_left_curve) && (first.op_keyboard_scaling_right_curve == second.op_keyboard_scaling_right_curve) && (first.op_keyboard_scaling_rate == second.op_keyboard_scaling_rate) && (first.op_amplitude_modulation_sensitivity == second.op_amplitude_modulation_sensitivity) && (first.op_velocity_sensitivity == second.op_velocity_sensitivity) && (first.op_output_level == second.op_output_level) && (first.op_oscillator_mode == second.op_oscillator_mode) && (first.op_oscillator_coarse == second.op_oscillator_coarse) && (first.op_oscillator_fine == second.op_oscillator_fine) && (first.op_oscillator_detune == second.op_oscillator_detune) && (first.pitch_envelope_rate_1 == second.pitch_envelope_rate_1) && (first.pitch_envelope_rate_2 == second.pitch_envelope_rate_2) && (first.pitch_envelope_rate_3 == second.pitch_envelope_rate_3) && (first.pitch_envelope_rate_4 == second.pitch_envelope_rate_4) && (first.pitch_envelope_level_1 == second.pitch_envelope_level_1) && (first.pitch_envelope_level_2 == second.pitch_envelope_level_2) && (first.pitch_envelope_level_3 == second.pitch_envelope_level_3) && (first.pitch_envelope_level_4 == second.pitch_envelope_level_4) && (first.algorithm_mode == second.algorithm_mode) && (first.algorithm_feedback == second.algorithm_feedback) && (first.oscillator_key_sync == second.oscillator_key_sync) && (first.lfo_waveform == second.lfo_waveform) && (first.lfo_speed == second.lfo_speed) && (first.lfo_delay == second.lfo_delay) && (first.lfo_pitch_modulation_depth == second.lfo_pitch_modulation_depth) && (first.lfo_amplitude_modulation_depth == second.lfo_amplitude_modulation_depth) && (first.lfo_sync == second.lfo_sync) && (first.pitch_modulation_sensitivity == second.pitch_modulation_sensitivity) && (first.transpose_semitones == second.transpose_semitones) && (first.patch_name == second.patch_name);
+        }
+
+        static bool operator!=(const patch& first, const patch& second)
+        {
+            return !(first == second);
+        }
 
         TEST_F(yamaha_dx7, op_envelope_generator_rate_1)
         {

@@ -6,6 +6,131 @@
 namespace midispec {
 namespace yamaha_dx7 {
 
+    namespace channel_voice {
+
+        void encode_note_off(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint8_t, 0, 127> note)
+        {
+            encoded.push_back(0x80 | (channel.value() & 0x0F));
+            encoded.push_back(note.value() & 0x7F);
+            encoded.push_back(0x00);
+        }
+
+        void encode_note_on(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint8_t, 0, 127> note,
+            const integral<std::uint8_t, 0, 127> velocity)
+        {
+            encoded.push_back(0x90 | (channel.value() & 0x0F));
+            encoded.push_back(note.value() & 0x7F);
+            encoded.push_back(velocity.value() & 0x7F);
+        }
+
+        void encode_program_change(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint8_t, 0, 31> program)
+        {
+            encoded.push_back(0xC0 | (channel.value() & 0x0F));
+            encoded.push_back(program.value() & 0x7F);
+        }
+
+        void encode_pitch_bend_change(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint16_t, 0, 16383, 8192> pitch_bend)
+        {
+            encoded.push_back(0xE0 | (channel.value() & 0x0F));
+            encoded.push_back(static_cast<std::uint8_t>(pitch_bend.value() & 0x7F));
+            encoded.push_back(static_cast<std::uint8_t>((pitch_bend.value() >> 7) & 0x7F));
+        }
+
+        bool decode_note_off(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 127>& note)
+        {
+            if (encoded.size() != 3) {
+                return false;
+            }
+            if ((encoded[0] & 0xF0) != 0x80) {
+                return false;
+            }
+            channel = encoded[0] & 0x0F;
+            note = encoded[1] & 0x7F;
+            return true;
+        }
+
+        bool decode_note_on(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 127>& note,
+            integral<std::uint8_t, 0, 127>& velocity)
+        {
+            if (encoded.size() != 3) {
+                return false;
+            }
+            if ((encoded[0] & 0xF0) != 0x90) {
+                return false;
+            }
+            channel = encoded[0] & 0x0F;
+            note = encoded[1] & 0x7F;
+            velocity = encoded[2] & 0x7F;
+            return true;
+        }
+
+        bool decode_program_change(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 31>& program)
+        {
+            if (encoded.size() != 2) {
+                return false;
+            }
+            if ((encoded[0] & 0xF0) != 0xC0) {
+                return false;
+            }
+            channel = encoded[0] & 0x0F;
+            program = encoded[1] & 0x7F;
+            return true;
+        }
+
+        bool decode_channel_pressure(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 127>& pressure)
+        {
+            if (encoded.size() != 2) {
+                return false;
+            }
+            if ((encoded[0] & 0xF0) != 0xD0) {
+                return false;
+            }
+            channel = encoded[0] & 0x0F;
+            pressure = encoded[1] & 0x7F;
+            return true;
+        }
+
+        bool decode_pitch_bend_change(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint16_t, 0, 16383, 8192>& pitch_bend)
+        {
+            if (encoded.size() != 3) {
+                return false;
+            }
+            if ((encoded[0] & 0xF0) != 0xE0) {
+                return false;
+            }
+            channel = encoded[0] & 0x0F;
+            pitch_bend = ((encoded[2] & 0x7F) << 7) | encoded[1] & 0x7F;
+            return true;
+        }
+    }
+
     namespace system_exclusive {
 
         namespace {
@@ -839,13 +964,13 @@ namespace yamaha_dx7 {
             std::array<patch, 32>& data)
         {
             if (encoded.size() < 8 || encoded[0] != SYSEX_START || encoded[1] != SYSEX_YAMAHA || encoded.back() != SYSEX_END) {
-                std::cerr << "Invalid source encoded data" << std::endl;
+                // std::cerr << "Invalid source encoded data" << std::endl;
                 return false;
             }
 
             const bool _vmem_byte_is_correct = (encoded[2] & 0x70) == 0x00;
             if (!_vmem_byte_is_correct) {
-                std::cerr << "Invalid vmem byte" << std::endl;
+                // std::cerr << "Invalid vmem byte" << std::endl;
                 return false;
             }
 
@@ -855,24 +980,24 @@ namespace yamaha_dx7 {
             const std::uint8_t _header_payload_offset = 6;
             const std::size_t _header_payload_length = encoded.size() - 6u /*hdr*/ - 1u /*CS*/ - 1u /*F7*/;
             if (_header_payload_length == 0) {
-                std::cerr << "Invalid payload length" << std::endl;
+                // std::cerr << "Invalid payload length" << std::endl;
                 return false;
             }
 
             const std::size_t _checksum_index = encoded.size() - 2;
             const std::uint8_t _checksum_calculation = checksum7(encoded.data() + _header_payload_offset, _header_payload_length);
             if ((encoded[_checksum_index] & 0x7F) != _checksum_calculation) {
-                std::cerr << "Invalid checksum" << std::endl;
+                // std::cerr << "Invalid checksum" << std::endl;
                 return false;
             }
 
             if (_header_group != SYSEX_VMEM_BANK || _header_length_high != SYSEX_VMEM_LENGTH_HIGH || _header_length_low != SYSEX_VMEM_LENGTH_LOW) {
-                std::cerr << "Invalid constants in bulk header" << std::endl;
+                // std::cerr << "Invalid constants in bulk header" << std::endl;
                 return false;
             }
 
             if (_header_payload_length != 4096) {
-                std::cerr << "Invalid payload length" << std::endl;
+                // std::cerr << "Invalid payload length" << std::endl;
                 return false;
             }
 

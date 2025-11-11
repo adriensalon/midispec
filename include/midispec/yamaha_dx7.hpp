@@ -7,126 +7,211 @@
 
 namespace midispec {
 
-/// @brief MIDI support for the Yamaha DX7.
-/// To allow SysEx, edit FUNCTION > 8 to show 'SYS INFO AVAIL'.
+/// @brief MIDI support for the Yamaha DX7 synthesizer.
+/// To allow SysEx, edit FUNCTION > 8 to show SYS INFO AVAIL.
 /// It can receive SysEx for a patch or a 32 patches bank (entire internal memory).
-/// It can only send the current 32 patches bank by editing FUNCTION > 8 to show 'MIDI TRANSMIT?'.
+/// It can only send the current 32 patches bank by editing FUNCTION > 8 to show MIDI TRANSMIT?.
 /// A workaround by sending these commands from SysEx is demonstrated in the 'test/test_yamaha_dx7.cpp' file.
 namespace yamaha_dx7 {
 
-    /// @brief Keyboard level-scaling curve used by each operator.
-    /// Controls how output level changes left/right of the breakpoint.
-    /// See per-value polarity and taper behavior.
-    /// In range [0, 3]
-    enum struct op_keyboard_scaling_curve : std::uint8_t {
-        /// @brief Negative linear: level decreases linearly as you move away from the breakpoint
-        negative_linear = 0,
-        /// @brief Positive linear: level increases linearly as you move away from the breakpoint
-        positive_linear = 1,
-        /// @brief Negative exponential: level decreases exponentially (steeper near breakpoint)
-        negative_exponential = 2,
-        /// @brief Positive exponential: level increases exponentially (steeper near breakpoint)
-        positive_exponential = 3
-    };
-
-    /// @brief Operator oscillator frequency mode.
-    /// Selects between ratio (pitch follows key) and fixed (absolute frequency) behavior.
-    /// In range [0, 1]
-    enum struct op_oscillator_mode : std::uint8_t {
-        /// @brief Ratio mode: frequency = key pitch × coarse/fine ratio; tracks keyboard pitch
-        ratio = 0,
-        /// @brief Fixed mode: frequency is absolute; coarse/fine select a fixed Hz value (not key-tracking)
-        fixed = 1
-    };
-
-    /// @brief Global LFO waveform selection.
-    /// Affects pitch (PM) and amplitude (AM) modulation destinations.
-    /// In range [0, 4]
-    enum struct lfo_waveform_mode : std::uint8_t {
-        /// @brief Triangle
-        triangle = 0,
-        /// @brief Saw down
-        saw_down = 1,
-        /// @brief Saw up
-        saw_up = 2,
-        /// @brief Square
-        square = 3,
-        /// @brief Sine
-        sine = 4
-    };
-
-    /// @brief Global mono/poly mode.
-    /// In range [0, 1]
-    enum struct mono_poly_mode : std::uint8_t {
-        monophonic = 0,
-        polyphonic = 1,
-    };
-
-    /// @brief Global portamento mode.
-    /// In range [0, 1]
-    enum struct portamento_mode : std::uint8_t {
-        /// @brief Remembers old pitch and always glides
-        retain = 0,
-        /// @brief Follows keypress behavior (only glides if overlapping)
-        follow = 1,
-    };
-
-    /// @brief Yamaha DX7 voice (patch) parameters.
-    /// Represents one complete 155 byte DX7 voice as used in SysEx single-voice dumps.
-    /// Includes all six operators, pitch envelope, algorithm, LFO, and global voice settings
-    struct patch {
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_1;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_2;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_3;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_4;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_1;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_2;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_3;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_4;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_keyboard_scaling_breakpoint;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_keyboard_scaling_left_depth;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_keyboard_scaling_right_depth;
-        std::array<op_keyboard_scaling_curve, 6> op_keyboard_scaling_left_curve;
-        std::array<op_keyboard_scaling_curve, 6> op_keyboard_scaling_right_curve;
-        std::array<integral<std::uint8_t, 0, 7>, 6> op_keyboard_scaling_rate;
-        std::array<integral<std::uint8_t, 0, 3>, 6> op_amplitude_modulation_sensitivity;
-        std::array<integral<std::uint8_t, 0, 7>, 6> op_velocity_sensitivity;
-        std::array<integral<std::uint8_t, 0, 99, 99>, 6> op_output_level;
-        std::array<op_oscillator_mode, 6> op_oscillator_mode;
-        std::array<integral<std::uint8_t, 0, 31>, 6> op_oscillator_coarse;
-        std::array<integral<std::uint8_t, 0, 99>, 6> op_oscillator_fine;
-        std::array<integral<std::uint8_t, 0, 14, 7>, 6> op_oscillator_detune;
-        integral<std::uint8_t, 0, 99> pitch_envelope_rate_1;
-        integral<std::uint8_t, 0, 99> pitch_envelope_rate_2;
-        integral<std::uint8_t, 0, 99> pitch_envelope_rate_3;
-        integral<std::uint8_t, 0, 99> pitch_envelope_rate_4;
-        integral<std::uint8_t, 0, 99> pitch_envelope_level_1;
-        integral<std::uint8_t, 0, 99> pitch_envelope_level_2;
-        integral<std::uint8_t, 0, 99> pitch_envelope_level_3;
-        integral<std::uint8_t, 0, 99> pitch_envelope_level_4;
-        integral<std::uint8_t, 0, 31> algorithm_mode;
-        integral<std::uint8_t, 0, 7> algorithm_feedback;
-        bool oscillator_key_sync;
-        lfo_waveform_mode lfo_waveform;
-        integral<std::uint8_t, 0, 99> lfo_speed;
-        integral<std::uint8_t, 0, 99> lfo_delay;
-        integral<std::uint8_t, 0, 99> lfo_pitch_modulation_depth;
-        integral<std::uint8_t, 0, 99> lfo_amplitude_modulation_depth;
-        bool lfo_sync;
-        integral<std::uint8_t, 0, 7> pitch_modulation_sensitivity;
-        integral<std::uint8_t, 0, 48, 24> transpose_semitones;
-        std::array<char, 10> patch_name;
-    };
-
     namespace channel_voice {
 
-    }
+        /// @brief Encodes a note off message.
+        /// @param encoded Vector to append the encoded message to
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param note MIDI note. In range [0, 127]
+        void encode_note_off(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint8_t, 0, 127> note);
 
-    namespace system_common {
+        /// @brief Encodes a note on message.
+        /// @param encoded Vector to append the encoded message to
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param note MIDI note. In range [0, 127]
+        /// @param velocity MIDI velocity. In range [0, 127]
+        void encode_note_on(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint8_t, 0, 127> note,
+            const integral<std::uint8_t, 0, 127> velocity);
 
+        /// @brief Encodes a program change message.
+        /// @param encoded Vector to append the encoded message to
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param program MIDI program clamped for the DX7. In range [0, 31]
+        void encode_program_change(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint8_t, 0, 31> program);
+
+        /// @brief Encodes a pitch bend change message.
+        /// @param encoded Vector to append the encoded message to
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param pitch_bend MIDI pitch bend. In range [0, 16383] (Default 8192)
+        void encode_pitch_bend_change(
+            std::vector<std::uint8_t>& encoded,
+            const integral<std::uint8_t, 0, 15> channel,
+            const integral<std::uint16_t, 0, 16383, 8192> pitch_bend);
+
+        /// @brief Decodes a note off message.
+        /// @param encoded Vector to read the encoded message from
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param note MIDI note. In range [0, 127]
+        /// @return true on success
+        bool decode_note_off(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 127>& note);
+
+        /// @brief Decodes a note on message.
+        /// @param encoded Vector to read the encoded message from
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param note MIDI note. In range [0, 127]
+        /// @param velocity MIDI velocity. In range [0, 127]
+        /// @return true on success
+        bool decode_note_on(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 127>& note,
+            integral<std::uint8_t, 0, 127>& velocity);
+
+        /// @brief Decodes a program change message.
+        /// @param encoded Vector to read the encoded message from
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param program MIDI program clamped for the DX7. In range [0, 31]
+        /// @return true on success
+        bool decode_program_change(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 31>& program);
+
+        /// @brief Decodes a channel pressure (mono after touch) message.
+        /// @param encoded Vector to read the encoded message from
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param program Nonstandard MIDI channel pressure. In range [0, 127]
+        /// @return true on success
+        bool decode_channel_pressure(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint8_t, 0, 127>& pressure);
+
+        /// @brief Decodes a pitch bend change message.
+        /// @param encoded Vector to read the encoded message from
+        /// @param channel Target channel number. In range [0, 15]
+        /// @param pitch_bend MIDI pitch bend. In range [0, 16383] (Default 8192)
+        /// @return true on success
+        bool decode_pitch_bend_change(
+            const std::vector<std::uint8_t>& encoded,
+            integral<std::uint8_t, 0, 15>& channel,
+            integral<std::uint16_t, 0, 16383, 8192>& pitch_bend);
     }
 
     namespace system_exclusive {
+
+        /// @brief Keyboard level-scaling curve used by each operator.
+        /// Controls how output level changes left/right of the breakpoint.
+        /// See per-value polarity and taper behavior.
+        /// In range [0, 3]
+        enum struct op_keyboard_scaling_curve : std::uint8_t {
+            /// @brief Negative linear: level decreases linearly as you move away from the breakpoint
+            negative_linear = 0,
+            /// @brief Positive linear: level increases linearly as you move away from the breakpoint
+            positive_linear = 1,
+            /// @brief Negative exponential: level decreases exponentially (steeper near breakpoint)
+            negative_exponential = 2,
+            /// @brief Positive exponential: level increases exponentially (steeper near breakpoint)
+            positive_exponential = 3
+        };
+
+        /// @brief Operator oscillator frequency mode.
+        /// Selects between ratio (pitch follows key) and fixed (absolute frequency) behavior.
+        /// In range [0, 1]
+        enum struct op_oscillator_mode : std::uint8_t {
+            /// @brief Ratio mode: frequency = key pitch × coarse/fine ratio; tracks keyboard pitch
+            ratio = 0,
+            /// @brief Fixed mode: frequency is absolute; coarse/fine select a fixed Hz value (not key-tracking)
+            fixed = 1
+        };
+
+        /// @brief Global LFO waveform selection.
+        /// Affects pitch (PM) and amplitude (AM) modulation destinations.
+        /// In range [0, 4]
+        enum struct lfo_waveform_mode : std::uint8_t {
+            /// @brief Triangle
+            triangle = 0,
+            /// @brief Saw down
+            saw_down = 1,
+            /// @brief Saw up
+            saw_up = 2,
+            /// @brief Square
+            square = 3,
+            /// @brief Sine
+            sine = 4
+        };
+
+        /// @brief Global mono/poly mode.
+        /// In range [0, 1]
+        enum struct mono_poly_mode : std::uint8_t {
+            monophonic = 0,
+            polyphonic = 1,
+        };
+
+        /// @brief Global portamento mode.
+        /// In range [0, 1]
+        enum struct portamento_mode : std::uint8_t {
+            /// @brief Remembers old pitch and always glides
+            retain = 0,
+            /// @brief Follows keypress behavior (only glides if overlapping)
+            follow = 1,
+        };
+
+        /// @brief Yamaha DX7 voice (patch) parameters.
+        /// Represents one complete 155 byte DX7 voice as used in SysEx single-voice dumps.
+        /// Includes all six operators, pitch envelope, algorithm, LFO, and global voice settings
+        struct patch {
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_1;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_2;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_3;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_rate_4;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_1;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_2;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_3;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_envelope_generator_level_4;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_keyboard_scaling_breakpoint;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_keyboard_scaling_left_depth;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_keyboard_scaling_right_depth;
+            std::array<op_keyboard_scaling_curve, 6> op_keyboard_scaling_left_curve;
+            std::array<op_keyboard_scaling_curve, 6> op_keyboard_scaling_right_curve;
+            std::array<integral<std::uint8_t, 0, 7>, 6> op_keyboard_scaling_rate;
+            std::array<integral<std::uint8_t, 0, 3>, 6> op_amplitude_modulation_sensitivity;
+            std::array<integral<std::uint8_t, 0, 7>, 6> op_velocity_sensitivity;
+            std::array<integral<std::uint8_t, 0, 99, 99>, 6> op_output_level;
+            std::array<op_oscillator_mode, 6> op_oscillator_mode;
+            std::array<integral<std::uint8_t, 0, 31>, 6> op_oscillator_coarse;
+            std::array<integral<std::uint8_t, 0, 99>, 6> op_oscillator_fine;
+            std::array<integral<std::uint8_t, 0, 14, 7>, 6> op_oscillator_detune;
+            integral<std::uint8_t, 0, 99> pitch_envelope_rate_1;
+            integral<std::uint8_t, 0, 99> pitch_envelope_rate_2;
+            integral<std::uint8_t, 0, 99> pitch_envelope_rate_3;
+            integral<std::uint8_t, 0, 99> pitch_envelope_rate_4;
+            integral<std::uint8_t, 0, 99> pitch_envelope_level_1;
+            integral<std::uint8_t, 0, 99> pitch_envelope_level_2;
+            integral<std::uint8_t, 0, 99> pitch_envelope_level_3;
+            integral<std::uint8_t, 0, 99> pitch_envelope_level_4;
+            integral<std::uint8_t, 0, 31> algorithm_mode;
+            integral<std::uint8_t, 0, 7> algorithm_feedback;
+            bool oscillator_key_sync;
+            lfo_waveform_mode lfo_waveform;
+            integral<std::uint8_t, 0, 99> lfo_speed;
+            integral<std::uint8_t, 0, 99> lfo_delay;
+            integral<std::uint8_t, 0, 99> lfo_pitch_modulation_depth;
+            integral<std::uint8_t, 0, 99> lfo_amplitude_modulation_depth;
+            bool lfo_sync;
+            integral<std::uint8_t, 0, 7> pitch_modulation_sensitivity;
+            integral<std::uint8_t, 0, 48, 24> transpose_semitones;
+            std::array<char, 10> patch_name;
+        };
 
         /// @brief Encodes an operator envelope generator rate 1 (attack rate) parameter change message.
         /// This parameter applies to the current patch for the selected operator
@@ -651,7 +736,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 99> data);
 
-        /// @brief Encodes modulation wheel range parameter change message.
+        /// @brief Encodes modulation wheel range parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Modulation wheel range. In range [0, 99]
@@ -660,7 +745,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 99> data);
 
-        /// @brief Encodes modulation wheel assign parameter change message.
+        /// @brief Encodes modulation wheel assign parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Modulation wheel assign. In range [0, 7]
@@ -669,7 +754,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 7> data);
 
-        /// @brief Encodes foot controller range parameter change message.
+        /// @brief Encodes foot controller range parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Foot controller range. In range [0, 99]
@@ -678,7 +763,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 99> data);
 
-        /// @brief Encodes foot controller assign parameter change message.
+        /// @brief Encodes foot controller assign parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Foot controller assign. In range [0, 7]
@@ -687,7 +772,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 7> data);
 
-        /// @brief Encodes breath controller range parameter change message.
+        /// @brief Encodes breath controller range parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Breath controller range. In range [0, 99]
@@ -696,7 +781,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 99> data);
 
-        /// @brief Encodes breath controller assign parameter change message.
+        /// @brief Encodes breath controller assign parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Breath controller assign. In range [0, 7]
@@ -705,7 +790,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 7> data);
 
-        /// @brief Encodes after touch range parameter change message.
+        /// @brief Encodes after touch range parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data After touch controller range. In range [0, 99]
@@ -714,7 +799,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const integral<std::uint8_t, 0, 99> data);
 
-        /// @brief Encodes after touch assign parameter change message.
+        /// @brief Encodes after touch assign parameter change message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data After touch assign. In range [0, 7]
@@ -735,7 +820,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 31> voice,
             const bool data);
 
-        /// @brief Encodes a panel STORE button press/release message.
+        /// @brief Encodes a panel STORE button press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -744,7 +829,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel MEMORY PROTECT (INTERNAL) toggle press/release message.
+        /// @brief Encodes a panel MEMORY PROTECT (INTERNAL) toggle press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -753,7 +838,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel MEMORY PROTECT (CARTRIDGE) toggle press/release message.
+        /// @brief Encodes a panel MEMORY PROTECT (CARTRIDGE) toggle press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -762,7 +847,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel OPERATOR SELECT button press/release message.
+        /// @brief Encodes a panel OPERATOR SELECT button press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -771,7 +856,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel EDIT/COMPARE button press/release message.
+        /// @brief Encodes a panel EDIT/COMPARE button press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -780,7 +865,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel MEMORY SELECT (INTERNAL) press/release message.
+        /// @brief Encodes a panel MEMORY SELECT (INTERNAL) press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -789,7 +874,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel MEMORY SELECT (CARTRIDGE) press/release message.
+        /// @brief Encodes a panel MEMORY SELECT (CARTRIDGE) press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -798,7 +883,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel FUNCTION button press/release message.
+        /// @brief Encodes a panel FUNCTION button press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -807,7 +892,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel NO button press/release message.
+        /// @brief Encodes a panel NO button press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -816,7 +901,7 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const bool data);
 
-        /// @brief Encodes a panel YES button press/release message.
+        /// @brief Encodes a panel YES button press/release message
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data true for press, false for release
@@ -826,7 +911,7 @@ namespace yamaha_dx7 {
             const bool data);
 
         /// @brief Encodes a patch SysEx data block.
-        /// Appends a complete 155-byte DX7 voice for the current patch slot
+        /// Appends a complete 155 byte voice for the current patch slot
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Patch parameters to encode
@@ -835,8 +920,8 @@ namespace yamaha_dx7 {
             const integral<std::uint8_t, 0, 15> device,
             const patch& data);
 
-        /// @brief Encodes a 32 patches bank SysEx data block.
-        /// Appends a complete DX7 internal bank (32 patches)
+        /// @brief Encodes a 32 patches bank SysEx data block
+        /// Appends a complete internal bank (32 patches)
         /// @param encoded Vector to append the encoded SysEx message to
         /// @param device Target device number. In range [0, 15]
         /// @param data Array of 32 patches to encode
@@ -846,19 +931,15 @@ namespace yamaha_dx7 {
             const std::array<patch, 32>& data);
 
         /// @brief Decodes a 32 patches bank SysEx data block.
-        /// Parses a DX7 internal bank (32 patches) into structured data
-        /// @param encoded Source SysEx bytes to decode
+        /// Parses an internal bank (32 patches) into structured data
+        /// @param encoded Vector to decode the SysEx message from
         /// @param device Expected target device number. In range [0, 15]
         /// @param data Output array to receive the 32 decoded patches
-        /// @return true on success; false if format or checksum is invalid
+        /// @return true on success
         bool decode_bank(
             const std::vector<std::uint8_t>& encoded,
             integral<std::uint8_t, 0, 15>& device,
             std::array<patch, 32>& data);
-
-    }
-
-    namespace system_realtime {
 
     }
 }
