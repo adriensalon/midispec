@@ -19,7 +19,10 @@
 
 namespace sysex {
 
+/// @brief 
 struct hardware : public testing::Test {
+
+    inline static std::chrono::milliseconds debounce_ms = std::chrono::milliseconds(50);
 
     static void SetUpTestSuite()
     {
@@ -71,6 +74,7 @@ protected:
         std::vector<unsigned char> msg(bytes.begin(), bytes.end());
         s_out->sendMessage(&msg);
         bytes.clear();
+        std::this_thread::sleep_for(debounce_ms);
     }
 
     static bool receive(std::vector<unsigned char>& out, int timeout_ms = 5000)

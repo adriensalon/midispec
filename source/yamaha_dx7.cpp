@@ -3,106 +3,99 @@
 
 #include <sysex/yamaha_dx7.hpp>
 
+/// User manual at 
+/// https://synthfool.com/docs/Yamaha/DX_Series/Yamaha%20DX7%20Operating%20Manual.pdf
+
 namespace sysex {
 namespace yamaha_dx7 {
     namespace {
-
-        struct vmem_header {
-            std::uint8_t device;
-            std::uint8_t group;
-            std::uint8_t length_hi;
-            std::uint8_t length_lo;
-            std::size_t payload_offset;
-            std::size_t payload_length;
-        };
 
         static constexpr std::uint8_t SYSEX_START = 0xF0;
         static constexpr std::uint8_t SYSEX_END = 0xF7;
         static constexpr std::uint8_t SYSEX_YAMAHA_ID = 0x43;
 
         static constexpr std::uint8_t SYSEX_GROUP_VOICE = 0;
-        static constexpr std::uint8_t SYSEX_GROUP_GLOBAL = 2;
+        static constexpr std::uint8_t SYSEX_GROUP_FUNCTION = 2;
 
         static constexpr std::uint8_t SYSEX_VOICE_OP_BLOCK_STRIDE = 21;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_RATE_1 = 0;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_RATE_2 = 1;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_RATE_3 = 2;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_RATE_4 = 3;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_LEVEL_1 = 4;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_LEVEL_2 = 5;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_LEVEL_3 = 6;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_EG_LEVEL_4 = 7;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_BREAKPOINT = 8;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_LEFT_DEPTH = 9;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_RIGHT_DEPTH = 10;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_LEFT_CURVE = 11;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_RIGHT_CURVE = 12;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_SCALING = 13;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_1 = 0;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_2 = 1;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_3 = 2;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_4 = 3;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_1 = 4;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_2 = 5;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_3 = 6;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_4 = 7;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_SCALING_BREAKPOINT = 8;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_SCALING_LEFT_DEPTH = 9;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_SCALING_RIGHT_DEPTH = 10;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_SCALING_LEFT_CURVE = 11;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_SCALING_RIGHT_CURVE = 12;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_KEYBOARD_SCALING_RATE = 13;
         static constexpr std::uint8_t SYSEX_VOICE_OP_AMPLITUDE_MODULATION_SENSITIVITY = 14;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_KEY_VELOCITY_SENSITIVITY = 15;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_VELOCITY_SENSITIVITY = 15;
         static constexpr std::uint8_t SYSEX_VOICE_OP_OUTPUT_LEVEL = 16;
         static constexpr std::uint8_t SYSEX_VOICE_OP_OSCILLATOR_MODE = 17;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_COARSE = 18;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_FINE = 19;
-        static constexpr std::uint8_t SYSEX_VOICE_OP_DETUNE = 20;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_RATE_1 = 125;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_RATE_2 = 126;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_RATE_3 = 127;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_RATE_4 = 128;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_LEVEL_1 = 130;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_LEVEL_2 = 131;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_LEVEL_3 = 132;
-        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENV_LEVEL_4 = 133;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_OSCILLATOR_COARSE = 18;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_OSCILLATOR_FINE = 19;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_OSCILLATOR_DETUNE = 20;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_RATE_1 = 126;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_RATE_2 = 127;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_RATE_3 = 128;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_RATE_4 = 129;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_1 = 130;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_2 = 131;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_3 = 132;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_4 = 133;
         static constexpr std::uint8_t SYSEX_VOICE_ALGORITHM_MODE = 134;
-        static constexpr std::uint8_t SYSEX_VOICE_FEEDBACK = 135;
-        static constexpr std::uint8_t SYSEX_VOICE_OSC_KEY_SYNC = 136;
+        static constexpr std::uint8_t SYSEX_VOICE_ALGORITHM_FEEDBACK = 135;
+        static constexpr std::uint8_t SYSEX_VOICE_OSCILLATOR_KEY_SYNC = 136;
         static constexpr std::uint8_t SYSEX_VOICE_LFO_SPEED = 137;
         static constexpr std::uint8_t SYSEX_VOICE_LFO_DELAY = 138;
-        static constexpr std::uint8_t SYSEX_VOICE_LFO_PMD = 139;
-        static constexpr std::uint8_t SYSEX_VOICE_LFO_AMD = 140;
+        static constexpr std::uint8_t SYSEX_VOICE_LFO_PITCH_MODULATION_DEPTH = 139;
+        static constexpr std::uint8_t SYSEX_VOICE_LFO_AMPLITUDE_MODULATION_DEPTH = 140;
         static constexpr std::uint8_t SYSEX_VOICE_LFO_SYNC = 141;
-        static constexpr std::uint8_t SYSEX_VOICE_LFO_WAVE = 142;
-        static constexpr std::uint8_t SYSEX_VOICE_PMS = 143;
+        static constexpr std::uint8_t SYSEX_VOICE_LFO_WAVEFORM = 142;
+        static constexpr std::uint8_t SYSEX_VOICE_PITCH_MODULATION_SENSITIVITY = 143;
         static constexpr std::uint8_t SYSEX_VOICE_TRANSPOSE = 144;
-        static constexpr std::uint8_t SYSEX_VOICE_VOICE_NAME_1 = 145; // ASCII, 7-bit
-        static constexpr std::uint8_t SYSEX_VOICE_VOICE_NAME_10 = 154; // inclusive
-        static constexpr std::uint8_t SYSEX_VOICE_OP_ENABLE_MASK = 155; // bit5=OP1 … bit0=OP6 (only via param-change; not in bulk)
+        static constexpr std::uint8_t SYSEX_VOICE_VOICE_NAME_1 = 145;
+        static constexpr std::uint8_t SYSEX_VOICE_VOICE_NAME_10 = 154;
+        static constexpr std::uint8_t SYSEX_VOICE_OP_ENABLE_MASK = 155;
 
-        static constexpr std::uint8_t SYSEX_GLOBAL_MONO_POLY = 64; // 0=poly,1=mono
-        static constexpr std::uint8_t SYSEX_GLOBAL_PB_RANGE = 65; // 0..12
-        static constexpr std::uint8_t SYSEX_GLOBAL_PB_STEP = 66; // 0..12
-        static constexpr std::uint8_t SYSEX_GLOBAL_PORTAMENTO_MODE = 67; // 0=retain,1=follow
-        static constexpr std::uint8_t SYSEX_GLOBAL_PORTAMENTO_GLISSANDO = 68; // 0/1
-        static constexpr std::uint8_t SYSEX_GLOBAL_PORTAMENTO_TIME = 69; // 0..99
-        static constexpr std::uint8_t SYSEX_GLOBAL_MOD_RANGE = 70; // 0..99
-        static constexpr std::uint8_t SYSEX_GLOBAL_MOD_ASSIGN = 71; // bit0: pitch, bit1: amp, bit2: EG bias
-        static constexpr std::uint8_t SYSEX_GLOBAL_FOOT_RANGE = 72; // 0..99
-        static constexpr std::uint8_t SYSEX_GLOBAL_FOOT_ASSIGN = 73;
-        static constexpr std::uint8_t SYSEX_GLOBAL_BREATH_RANGE = 74; // 0..99
-        static constexpr std::uint8_t SYSEX_GLOBAL_BREATH_ASSIGN = 75;
-        static constexpr std::uint8_t SYSEX_GLOBAL_AT_RANGE = 76; // 0..99
-        static constexpr std::uint8_t SYSEX_GLOBAL_AT_ASSIGN = 77;
+        static constexpr std::uint8_t SYSEX_GLOBAL_MONO_POLY_MODE = 64;
+        static constexpr std::uint8_t SYSEX_GLOBAL_PITCH_BEND_RANGE = 65;
+        static constexpr std::uint8_t SYSEX_GLOBAL_PITCH_BEND_STEP = 66;
+        static constexpr std::uint8_t SYSEX_GLOBAL_PORTAMENTO_MODE = 67;
+        static constexpr std::uint8_t SYSEX_GLOBAL_PORTAMENTO_GLISSANDO = 68;
+        static constexpr std::uint8_t SYSEX_GLOBAL_PORTAMENTO_TIME = 69;
+        static constexpr std::uint8_t SYSEX_GLOBAL_MODULATION_WHEEL_RANGE = 70;
+        static constexpr std::uint8_t SYSEX_GLOBAL_MODULATION_WHEEL_ASSIGN = 71;
+        static constexpr std::uint8_t SYSEX_GLOBAL_FOOT_CONTROLLER_RANGE = 72;
+        static constexpr std::uint8_t SYSEX_GLOBAL_FOOT_CONTROLLER_ASSIGN = 73;
+        static constexpr std::uint8_t SYSEX_GLOBAL_BREATH_CONTROLLER_RANGE = 74;
+        static constexpr std::uint8_t SYSEX_GLOBAL_BREATH_CONTROLLER_ASSIGN = 75;
+        static constexpr std::uint8_t SYSEX_GLOBAL_AFTER_TOUCH_RANGE = 76;
+        static constexpr std::uint8_t SYSEX_GLOBAL_AFTER_TOUCH_ASSIGN = 77;
 
         static constexpr std::uint8_t SYSEX_BUTTON_1 = 0x00;
-        static constexpr std::uint8_t SYSEX_BUTTON_2 = 0x01;
-        static constexpr std::uint8_t SYSEX_BUTTON_3 = 0x02;
-        static constexpr std::uint8_t SYSEX_BUTTON_4 = 0x03;
-        static constexpr std::uint8_t SYSEX_BUTTON_5 = 0x04;
-        static constexpr std::uint8_t SYSEX_BUTTON_6 = 0x05;
-        static constexpr std::uint8_t SYSEX_BUTTON_7 = 0x06;
-        static constexpr std::uint8_t SYSEX_BUTTON_8 = 0x07;
         static constexpr std::uint8_t SYSEX_BUTTON_STORE = 0x20;
         static constexpr std::uint8_t SYSEX_BUTTON_MEMORY_PROTECT_INTERNAL = 0x21;
         static constexpr std::uint8_t SYSEX_BUTTON_MEMORY_PROTECT_CARTRIDGE = 0x22;
+        static constexpr std::uint8_t SYSEX_BUTTON_OPERATOR_SELECT = 0x23;
+        static constexpr std::uint8_t SYSEX_BUTTON_EDIT_COMPARE = 0x24;
         static constexpr std::uint8_t SYSEX_BUTTON_MEMORY_SELECT_INTERNAL = 0x25;
         static constexpr std::uint8_t SYSEX_BUTTON_MEMORY_SELECT_CARTRIDGE = 0x26;
         static constexpr std::uint8_t SYSEX_BUTTON_FUNCTION = 0x27;
         static constexpr std::uint8_t SYSEX_BUTTON_NO = 0x28;
         static constexpr std::uint8_t SYSEX_BUTTON_YES = 0x29;
 
+        static constexpr std::uint8_t SYSEX_VCED_SINGLE = 0x00;
+        static constexpr std::uint8_t SYSEX_VCED_LENGTH_HIGH = 0x01;
+        static constexpr std::uint8_t SYSEX_VCED_LENGTH_LOW = 0x1B;
+
         static constexpr std::uint8_t SYSEX_VMEM_BANK = 0x09;
-        static constexpr std::uint8_t SYSEX_VMEM_LEN_HI = 0x20;
-        static constexpr std::uint8_t SYSEX_VMEM_LEN_LO = 0x00;
+        static constexpr std::uint8_t SYSEX_VMEM_LENGTH_HIGH = 0x20;
+        static constexpr std::uint8_t SYSEX_VMEM_LENGTH_LOW = 0x00;
 
         static std::uint8_t checksum7(const std::uint8_t* data, const std::size_t length)
         {
@@ -115,10 +108,6 @@ namespace yamaha_dx7 {
 
         static void append_param_change(std::vector<std::uint8_t>& encoded, const std::uint8_t device, const std::uint8_t group, const std::uint16_t parameter, const std::uint8_t value)
         {
-            // Split param_number across the “group/param-hi” and the “param-lo” bytes.
-            // The DX7 packs the high bit(s) of the parameter number into the low two
-            // bits of the “group” byte (that spec’s 0ggggpp). In practice for DX7 voice
-            // params you only need one extra bit (for 128..155).
             const std::uint8_t _parameter_high = (parameter >> 7) & 0x01;
             const std::uint8_t _parameter_low = parameter & 0x7F;
             const std::uint8_t _group_and_high = ((group & 0x1F) << 2) | (_parameter_high & 0x03);
@@ -143,14 +132,14 @@ namespace yamaha_dx7 {
             encoded.push_back(SYSEX_END);
         }
 
-        static void append_bulk_header(std::vector<std::uint8_t>& encoded, const std::uint8_t device, const std::uint8_t group, const std::uint8_t length_hi, const std::uint8_t length_lo)
+        static void append_bulk_header(std::vector<std::uint8_t>& encoded, const std::uint8_t device, const std::uint8_t group, const std::uint8_t length_high, const std::uint8_t length_low)
         {
             encoded.push_back(SYSEX_START);
             encoded.push_back(SYSEX_YAMAHA_ID);
             encoded.push_back(0x00 | (device & 0x0F));
             encoded.push_back(group & 0x7F);
-            encoded.push_back(length_hi & 0x7F);
-            encoded.push_back(length_lo & 0x7F);
+            encoded.push_back(length_high & 0x7F);
+            encoded.push_back(length_low & 0x7F);
         }
 
         static void append_bulk_finish(std::vector<std::uint8_t>& encoded, const std::uint8_t* payload, const std::size_t payload_length)
@@ -159,457 +148,547 @@ namespace yamaha_dx7 {
             encoded.push_back(checksum7(payload, payload_length) & 0x7F);
             encoded.push_back(SYSEX_END);
         }
-
-        static bool parse_bulk_header(const std::vector<std::uint8_t>& encoded, vmem_header& header)
-        {
-            if (encoded.size() < 8 || encoded[0] != SYSEX_START || encoded[1] != SYSEX_YAMAHA_ID || encoded.back() != SYSEX_END) {
-                std::cerr << "Invalid source encoded data" << std::endl;
-                return false;
-            }
-
-            const bool _vmem_byte_is_correct = (encoded[2] & 0x70) == 0x00;
-            if (!_vmem_byte_is_correct) {
-                std::cerr << "Invalid vmem byte" << std::endl;
-                return false;
-            }
-
-            header.group = encoded[3] & 0x7F;
-            header.length_hi = encoded[4] & 0x7F;
-            header.length_lo = encoded[5] & 0x7F;
-            header.payload_offset = 6;
-            header.payload_length = encoded.size() - 6 /*hdr*/ - 1 /*cs*/ - 1 /*F7*/;
-            if (header.payload_length == 0) {
-                std::cerr << "Invalid payload length" << std::endl;
-                return false;
-            }
-
-            const std::size_t _checksum_index = encoded.size() - 2;
-            const std::uint8_t _checksum_calculation = checksum7(encoded.data() + header.payload_offset, header.payload_length);
-            if ((encoded[_checksum_index] & 0x7F) != _checksum_calculation) {
-                std::cerr << "Invalid checksum calculation" << std::endl;
-                return false;
-            }
-
-            return true;
-        }
     }
 
-    // encode
-
-    void encode_op_eg_rate_1(
+    void encode_op_envelope_generator_rate_1(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_RATE_1, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_1, data.value());
     }
 
-    void encode_op_eg_rate_2(
+    void encode_op_envelope_generator_rate_2(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_RATE_2, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_2, data.value());
     }
 
-    void encode_op_eg_rate_3(
+    void encode_op_envelope_generator_rate_3(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_RATE_3, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_3, data.value());
     }
 
-    void encode_op_eg_rate_4(
+    void encode_op_envelope_generator_rate_4(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_RATE_4, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_4, data.value());
     }
 
-    void encode_op_eg_level_1(
+    void encode_op_envelope_generator_level_1(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_LEVEL_1, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_1, data.value());
     }
 
-    void encode_op_eg_level_2(
+    void encode_op_envelope_generator_level_2(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_LEVEL_2, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_2, data.value());
     }
 
-    void encode_op_eg_level_3(
+    void encode_op_envelope_generator_level_3(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_LEVEL_3, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_3, data.value());
     }
 
-    void encode_op_eg_level_4(
+    void encode_op_envelope_generator_level_4(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 5> op,
-        const sysex::integral<std::uint8_t, 0, 99> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
     {
-        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_EG_LEVEL_4, data.value());
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_4, data.value());
     }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::op_id op, const yamaha_dx7::eg_level_1& data)
-    // {
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, static_cast<std::uint8_t>((5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE) + SYSEX_VOICE_OP_EG_LEVEL_1, data.value());
-    // }
+    void encode_op_keyboard_scaling_breakpoint(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_KEYBOARD_SCALING_BREAKPOINT, data.value());
+    }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::op_id op, const yamaha_dx7::eg_level_2& data)
-    // {
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, static_cast<std::uint8_t>((5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE) + SYSEX_VOICE_OP_EG_LEVEL_2, data.value());
-    // }
+    void encode_op_keyboard_scaling_left_depth(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_KEYBOARD_SCALING_LEFT_DEPTH, data.value());
+    }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::op_id op, const yamaha_dx7::op_eg_level_3& data)
-    // {
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, static_cast<std::uint8_t>((5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE) + SYSEX_VOICE_OP_EG_LEVEL_3, data.value());
-    // }
+    void encode_op_keyboard_scaling_right_depth(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_KEYBOARD_SCALING_RIGHT_DEPTH, data.value());
+    }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::op_id op, const yamaha_dx7::op_eg_level_4& data)
-    // {
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, static_cast<std::uint8_t>((5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE) + SYSEX_VOICE_OP_EG_LEVEL_4, data.value());
-    // }
+    void encode_op_keyboard_scaling_left_curve(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const op_keyboard_scaling_curve data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_KEYBOARD_SCALING_LEFT_CURVE, static_cast<std::uint8_t>(data));
+    }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const std::uint8_t op, const yamaha_dx7::op_keyboard_scaling& data)
-    // {
-    //     const std::uint8_t _op_base = static_cast<std::uint8_t>((5 - op.value()) * SYSEX_OP_BLOCK_STRIDE);
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_KEYBOARD_BP, clamp7(data.break_point, 0, 99));
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_KEYBOARD_LEFT_DEPTH, clamp7(data.left_depth, 0, 99));
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_KEYBOARD_RIGHT_DEPTH, clamp7(data.right_depth, 0, 99));
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_KEYBOARD_LEFT_CURVE, static_cast<std::uint8_t>(data.left_curve));
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_KEYBOARD_RIGHT_CURVE, static_cast<std::uint8_t>(data.right_curve));
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_KEYBOARD_SCALING, clamp7(data.rate_scaling, 0, 7));
-    // }
+    void encode_op_keyboard_scaling_right_curve(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const op_keyboard_scaling_curve data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_KEYBOARD_SCALING_RIGHT_CURVE, static_cast<std::uint8_t>(data));
+    }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const std::uint8_t op, const yamaha_dx7::op_velocity_amp& data)
-    // {
-    //     const std::uint8_t _op_base = static_cast<std::uint8_t>((5 - op.value()) * SYSEX_OP_BLOCK_STRIDE);
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_KEY_VELOCITY_SENSITIVITY, clamp7(data.velocity_sensitivity, 0, 7));
-    //     append_param_change(encoded, device, SYSEX_GROUP_VOICE, _op_base + SYSEX_OP_AMPLITUDE_MODULATION_SENSITIVITY, clamp7(data.amp_mod_sensitivity, 0, 3));
-    // }
+    void encode_op_keyboard_scaling_rate(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_KEYBOARD_SCALING_RATE, data.value());
+    }
 
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const std::uint8_t op, const yamaha_dx7::op_output_level& d)
-    // {
-    //     const std::uint16_t a = addr::OP_OUTPUT_LEVEL_BASE /* + stride*(d.op-1) */;
-    //     const std::uint8_t v = clamp7(d.level, 0, 99);
-    //     append_param_change(out, dev, a, &v, 1);
-    // }
+    void encode_op_amplitude_modulation_sensitivity(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 3> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_AMPLITUDE_MODULATION_SENSITIVITY, data.value());
+    }
 
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const std::uint8_t op, const yamaha_dx7::op_oscillator& d)
-    // {
-    //     const std::uint16_t a = addr::OP_OSC_BASE /* + stride*(d.op-1) */;
-    //     // Typical packing is separate bytes; if the DX7 packs bits, adjust here.
-    //     std::uint8_t payload[4] = {
-    //         static_cast<std::uint8_t>(d.mode),
-    //         clamp7(d.coarse, 0, 31),
-    //         clamp7(d.fine, 0, 99),
-    //         encode_detune(d.detune)
-    //     };
-    //     append_param_change(out, dev, a, payload, 4);
-    // }
+    void encode_op_velocity_sensitivity(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_VELOCITY_SENSITIVITY, data.value());
+    }
 
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::pitch_envelope_rates& d)
-    // {
-    //     const std::uint16_t a = addr::PITCH_ENV_RATES;
-    //     std::uint8_t payload[4] = {
-    //         clamp7(d.rate_1, 0, 99), clamp7(d.rate_2, 0, 99),
-    //         clamp7(d.rate_3, 0, 99), clamp7(d.rate_4, 0, 99)
-    //     };
-    //     append_param_change(out, dev, a, payload, 4);
-    // }
+    void encode_op_output_level(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_OUTPUT_LEVEL, data.value());
+    }
 
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::pitch_envelope_levels& d)
-    // {
-    //     const std::uint16_t a = addr::PITCH_ENV_LEVELS;
-    //     std::uint8_t payload[4] = {
-    //         clamp7(d.level_1, 0, 99), clamp7(d.level_2, 0, 99),
-    //         clamp7(d.level_3, 0, 99), clamp7(d.level_4, 0, 99)
-    //     };
-    //     append_param_change(out, dev, a, payload, 4);
-    // }
+    void encode_op_oscillator_mode(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const op_oscillator_mode data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_OSCILLATOR_MODE, static_cast<std::uint8_t>(data));
+    }
+
+    void encode_op_oscillator_coarse(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 31> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_OSCILLATOR_COARSE, data.value());
+    }
+
+    void encode_op_oscillator_fine(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_OSCILLATOR_FINE, data.value());
+    }
+
+    void encode_op_oscillator_detune(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 5> op,
+        const integral<std::uint8_t, 0, 14, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, (5 - op.value()) * SYSEX_VOICE_OP_BLOCK_STRIDE + SYSEX_VOICE_OP_OSCILLATOR_DETUNE, data.value());
+    }
+
+    void encode_pitch_envelope_rate_1(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_RATE_1, data.value());
+    }
+
+    void encode_pitch_envelope_rate_2(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_RATE_2, data.value());
+    }
+
+    void encode_pitch_envelope_rate_3(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_RATE_3, data.value());
+    }
+
+    void encode_pitch_envelope_rate_4(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_RATE_4, data.value());
+    }
+
+    void encode_pitch_envelope_level_1(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_1, data.value());
+    }
+
+    void encode_pitch_envelope_level_2(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_2, data.value());
+    }
+
+    void encode_pitch_envelope_level_3(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_3, data.value());
+    }
+
+    void encode_pitch_envelope_level_4(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_4, data.value());
+    }
 
     void encode_algorithm_mode(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const sysex::integral<std::uint8_t, 0, 31> data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 31> data)
     {
         append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_ALGORITHM_MODE, data.value());
     }
 
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::algorithm_feedback& d)
-    // {
-    //     const std::uint16_t a = addr::ALGO_FEEDBACK;
-    //     std::uint8_t payload[2] = {
-    //         static_cast<std::uint8_t>(d.algorithm), // 1..32 stored 1..32 or 0..31 depending on spec
-    //         clamp7(d.feedback, 0, 7)
-    //     };
-    //     append_param_change(out, dev, a, payload, 2);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::oscillator_key_sync& d)
-    // {
-    //     const std::uint16_t a = addr::OSC_KEY_SYNC;
-    //     const std::uint8_t v = d.enable ? 1 : 0;
-    //     append_param_change(out, dev, a, &v, 1);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::lfo_settings& d)
-    // {
-    //     const std::uint16_t a = addr::LFO_SETTINGS;
-    //     std::uint8_t payload[6] = {
-    //         static_cast<std::uint8_t>(d.waveform),
-    //         clamp7(d.speed, 0, 99),
-    //         clamp7(d.delay, 0, 99),
-    //         clamp7(d.pitch_mod_depth, 0, 99),
-    //         clamp7(d.amp_mod_depth, 0, 99),
-    //         static_cast<std::uint8_t>(d.sync ? 1 : 0)
-    //     };
-    //     append_param_change(out, dev, a, payload, 6);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::pitch_modulation_sensitivity& d)
-    // {
-    //     const std::uint16_t a = addr::PMS;
-    //     const std::uint8_t v = clamp7(d.sensitivity, 0, 7);
-    //     append_param_change(out, dev, a, &v, 1);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::transpose& d)
-    // {
-    //     const std::uint16_t a = addr::TRANSPOSE;
-    //     // DX7 typically encodes transpose as 0..48 with 24 = 0 semis; adjust if needed.
-    //     const std::int8_t st = clamp<std::int8_t>(d.semitones, -24, 24);
-    //     const std::uint8_t v = static_cast<std::uint8_t>(st + 24);
-    //     append_param_change(out, dev, a, &v, 1);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::op_enable_mask& d)
-    // {
-    //     const std::uint16_t a = addr::OP_ENABLE_MASK;
-    //     const std::uint8_t v = d.mask & 0x3F;
-    //     append_param_change(out, dev, a, &v, 1);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::voice_name& d)
-    // {
-    //     const std::uint16_t a = addr::VOICE_NAME_BASE;
-    //     // 10 bytes; ensure 7-bit clean ASCII (DX7 ignores high bit).
-    //     std::uint8_t payload[10];
-    //     for (int i = 0; i < 10; ++i) {
-    //         char c = d.name[i];
-    //         if (c == '\0')
-    //             c = ' ';
-    //         payload[i] = static_cast<std::uint8_t>(c) & 0x7F;
-    //     }
-    //     append_param_change(out, dev, a, payload, 10);
-    // }
-
-    // // Bulk single-voice encode (optional, if you later add a raw VCED image)
-    // // Your current patch type is structured, so we don’t have the 155-byte blob.
-    // // Keep this as a forwarding orchestration if you want to send a whole patch
-    // // as individual param-change messages.
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::patch& data)
-    // {
-    //     std::array<std::uint8_t, 155> vced {};
-    //     pack_vced_from_struct(data, vced);
-
-    //     append_bulk_header(encoded, device, GROUP_VCED_SINGLE, VCED_LEN_HI, VCED_LEN_LO);
-    //     append_bulk_finish(encoded, vced.data(), vced.size());
-    // }
-
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::bank& data)
-    // {
-    //     std::vector<std::uint8_t> vmem;
-    //     pack_vmem_from_struct(data, vmem);
-
-    //     append_bulk_header(encoded, device, GROUP_VMEM_BANK, VMEM_LEN_HI, VMEM_LEN_LO);
-    //     append_bulk_finish(encoded, vmem.data(), vmem.size());
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::pitch_bend& d)
-    // {
-    //     // TODO: fill with the real address/packing if you want to set via param-change
-    //     const std::uint16_t a = addr::PITCH_BEND_GLOBAL;
-    //     std::uint8_t payload[3] = {
-    //         clamp7(d.up_semitones, 0, 12),
-    //         clamp7(d.down_semitones, 0, 12),
-    //         clamp7(d.step, 0, 12)
-    //     };
-    //     append_param_change(out, dev, a, payload, 3);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::portamento& d)
-    // {
-    //     const std::uint16_t a = addr::PORTAMENTO_GLOBAL;
-    //     std::uint8_t payload[4] = {
-    //         static_cast<std::uint8_t>(d.enabled ? 1 : 0),
-    //         clamp7(d.time, 0, 99),
-    //         static_cast<std::uint8_t>(d.fingered ? 1 : 0),
-    //         static_cast<std::uint8_t>(d.glissando ? 1 : 0),
-    //     };
-    //     append_param_change(out, dev, a, payload, 4);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::mono_poly& d)
-    // {
-    //     const std::uint16_t a = addr::MONO_POLY_GLOBAL;
-    //     std::uint8_t payload[3] = {
-    //         static_cast<std::uint8_t>(d.mono ? 1 : 0),
-    //         static_cast<std::uint8_t>(d.unison ? 1 : 0),
-    //         clamp7(d.unison_detune, 0, 7)
-    //     };
-    //     append_param_change(out, dev, a, payload, 3);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::aftertouch& d)
-    // {
-    //     const std::uint16_t a = addr::AFTERTOUCH_GLOBAL;
-    //     const std::uint8_t v = d.enable ? 1 : 0;
-    //     append_param_change(out, dev, a, &v, 1);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::foot_controller& d)
-    // {
-    //     const std::uint16_t a = addr::FOOT_CTRL_GLOBAL;
-    //     std::uint8_t payload[4] = {
-    //         static_cast<std::uint8_t>(d.to_pitch ? 1 : 0),
-    //         static_cast<std::uint8_t>(d.to_amp ? 1 : 0),
-    //         static_cast<std::uint8_t>(d.to_bias ? 1 : 0),
-    //         clamp7(d.depth, 0, 99)
-    //     };
-    //     append_param_change(out, dev, a, payload, 4);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::breath_controller& d)
-    // {
-    //     const std::uint16_t a = addr::BREATH_CTRL_GLOBAL;
-    //     std::uint8_t payload[4] = {
-    //         static_cast<std::uint8_t>(d.to_pitch ? 1 : 0),
-    //         static_cast<std::uint8_t>(d.to_amp ? 1 : 0),
-    //         static_cast<std::uint8_t>(d.to_bias ? 1 : 0),
-    //         clamp7(d.depth, 0, 99)
-    //     };
-    //     append_param_change(out, dev, a, payload, 4);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::mod_wheel& data)
-    // {
-    //     const std::uint16_t a = addr::MOD_WHEEL_GLOBAL;
-    //     std::uint8_t payload[4] = {
-    //         static_cast<std::uint8_t>(data.to_pitch ? 1 : 0),
-    //         static_cast<std::uint8_t>(data.to_amp ? 1 : 0),
-    //         static_cast<std::uint8_t>(data.to_bias ? 1 : 0),
-    //         clamp7(data.depth, 0, 99)
-    //     };
-    //     append_param_change(out, dev, a, payload, 4);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::master_tune& data)
-    // {
-    //     const std::uint16_t a = addr::MASTER_TUNE;
-    //     // Map ±100 cents to e.g. 0..200 with 100 = center if that’s what DX7 expects.
-    //     const std::int16_t cents = clamp<std::int16_t>(data.cents, -100, 100);
-    //     const std::uint8_t v = static_cast<std::uint8_t>(cents + 100);
-    //     append_param_change(out, dev, a, &v, 1);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::function_block& data)
-    // {
-    //     std::array<std::uint8_t, 52> func {};
-    //     pack_function_from_struct(data, func);
-
-    //     append_bulk_header(encoded, device, GROUP_FUNCTION, FUNC_LEN_HI, FUNC_LEN_LO);
-    //     append_bulk_finish(encoded, func.data(), func.size());
-    // }
-
-    // // Memory Protect (Mk I): implemented using remote panel buttons
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::memory_protect_internal& data)
-    // {
-    //     // Press/release “MEM PROTECT INTERNAL”, then YES/NO press/release
-    //     append_button(out, dev, SYSEX_BUTTON_MEMORY_PROTECT_INTERNAL, true);
-    //     append_button(out, dev, SYSEX_BUTTON_MEMORY_PROTECT_INTERNAL, false);
-    //     append_button(out, dev, data.enable ? BTN_YES : BTN_NO, true);
-    //     append_button(out, dev, data.enable ? BTN_YES : BTN_NO, false);
-    // }
-
-    // void encode(std::vector<std::uint8_t>& out, const yamaha_dx7::device_id dev, const yamaha_dx7::memory_protect_cartridge& data)
-    // {
-    //     append_button(out, dev, BTN_MEMPROT_CART, true);
-    //     append_button(out, dev, BTN_MEMPROT_CART, false);
-    //     append_button(out, dev, data.enable ? BTN_YES : BTN_NO, true);
-    //     append_button(out, dev, data.enable ? BTN_YES : BTN_NO, false);
-    // }
-
-    void encode_button_1(
+    void encode_algorithm_feedback(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
-        const bool data)
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 7> data)
     {
-        append_button(encoded, device.value(), SYSEX_BUTTON_1, data);
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_ALGORITHM_FEEDBACK, data.value());
     }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::button_2& data)
-    // {
-    //     append_button(encoded, device, SYSEX_BUTTON_2, data.value());
-    // }
-
-    void encode_button_8(
+    void encode_oscillator_key_sync(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 15> device,
         const bool data)
     {
-        append_button(encoded, device.value(), SYSEX_BUTTON_8, data);
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_OSCILLATOR_KEY_SYNC, static_cast<std::uint8_t>(data));
+    }
+
+    void encode_lfo_waveform(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const lfo_waveform_mode data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_LFO_WAVEFORM, static_cast<std::uint8_t>(data));
+    }
+
+    void encode_lfo_speed(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_LFO_SPEED, data.value());
+    }
+
+    void encode_lfo_delay(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_LFO_DELAY, data.value());
+    }
+
+    void encode_lfo_pitch_modulation_depth(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_LFO_PITCH_MODULATION_DEPTH, data.value());
+    }
+
+    void encode_lfo_amplitude_modulation_depth(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_LFO_AMPLITUDE_MODULATION_DEPTH, data.value());
+    }
+
+    void encode_lfo_sync(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const bool data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_LFO_SYNC, static_cast<std::uint8_t>(data));
+    }
+
+    void encode_pitch_modulation_sensitivity(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_PITCH_MODULATION_SENSITIVITY, data.value());
+    }
+
+    void encode_transpose_semitones(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 48, 24> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_TRANSPOSE, data.value());
+    }
+
+    void encode_op_enable_mask(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0x00, 0x3F, 0x3F> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_OP_ENABLE_MASK, data.value());
+    }
+
+    void encode_patch_name(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const std::array<char, 10>& data)
+    {
+        for (std::size_t _char_index = 0; _char_index < 10; ++_char_index) {
+            append_param_change(encoded, device.value(), SYSEX_GROUP_VOICE, SYSEX_VOICE_VOICE_NAME_1 + _char_index, static_cast<std::uint8_t>(data[_char_index]));
+        }
+    }
+
+    void encode_mono_poly_mode(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const mono_poly_mode data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_MONO_POLY_MODE, static_cast<std::uint8_t>(data));
+    }
+
+    void encode_pitch_bend_range_semitones(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 12, 2> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_PITCH_BEND_RANGE, data.value());
+    }
+
+    void encode_pitch_bend_step(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 12> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_PITCH_BEND_STEP, data.value());
+    }
+
+    void encode_portamento_mode(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const portamento_mode data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_PORTAMENTO_MODE, static_cast<std::uint8_t>(data));
+    }
+
+    void encode_portamento_glissando(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const bool data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_PORTAMENTO_GLISSANDO, static_cast<std::uint8_t>(data));
+    }
+
+    void encode_portamento_time(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_PORTAMENTO_TIME, data.value());
+    }
+
+    void encode_modulation_wheel_range(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_MODULATION_WHEEL_RANGE, data.value());
+    }
+
+    void encode_modulation_wheel_assign(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_MODULATION_WHEEL_ASSIGN, data.value());
+    }
+
+    void encode_foot_controller_range(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_FOOT_CONTROLLER_RANGE, data.value());
+    }
+
+    void encode_foot_controller_assign(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_FOOT_CONTROLLER_ASSIGN, data.value());
+    }
+
+    void encode_breath_controller_range(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_BREATH_CONTROLLER_RANGE, data.value());
+    }
+
+    void encode_breath_controller_assign(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_BREATH_CONTROLLER_ASSIGN, data.value());
+    }
+
+    void encode_after_touch_controller_range(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 99> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_AFTER_TOUCH_RANGE, data.value());
+    }
+
+    void encode_after_touch_controller_assign(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 7> data)
+    {
+        append_param_change(encoded, device.value(), SYSEX_GROUP_FUNCTION, SYSEX_GLOBAL_AFTER_TOUCH_ASSIGN, data.value());
+    }
+
+    void encode_button_voice(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 31> voice,
+        const bool data)
+    {
+        append_button(encoded, device.value(), SYSEX_BUTTON_1 + voice.value(), data);
     }
 
     void encode_button_store(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 15> device,
         const bool data)
     {
         append_button(encoded, device.value(), SYSEX_BUTTON_STORE, data);
     }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::button_memory_protect_internal& data)
-    // {
-    // }
+    void encode_button_memory_protect_internal(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const bool data)
+    {
+        append_button(encoded, device.value(), SYSEX_BUTTON_MEMORY_PROTECT_INTERNAL, data);
+    }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::button_memory_protect_cartridge& data)
-    // {
-    // }
+    void encode_button_memory_protect_cartridge(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const bool data)
+    {
+        append_button(encoded, device.value(), SYSEX_BUTTON_MEMORY_PROTECT_CARTRIDGE, data);
+    }
+
+    void encode_button_op_select(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const bool data)
+    {
+        append_button(encoded, device.value(), SYSEX_BUTTON_OPERATOR_SELECT, data);
+    }
+
+    void encode_button_edit_compare(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const bool data)
+    {
+        append_button(encoded, device.value(), SYSEX_BUTTON_EDIT_COMPARE, data);
+    }
 
     void encode_button_memory_select_internal(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 15> device,
         const bool data)
     {
         append_button(encoded, device.value(), SYSEX_BUTTON_MEMORY_SELECT_INTERNAL, data);
     }
 
-    // void encode(std::vector<std::uint8_t>& encoded, const yamaha_dx7::device_id device, const yamaha_dx7::button_memory_select_cartridge& data)
-    // {
-    // }
+    void encode_button_memory_select_cartridge(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const bool data)
+    {
+        append_button(encoded, device.value(), SYSEX_BUTTON_MEMORY_SELECT_CARTRIDGE, data);
+    }
 
     void encode_button_function(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 15> device,
         const bool data)
     {
         append_button(encoded, device.value(), SYSEX_BUTTON_FUNCTION, data);
@@ -617,7 +696,7 @@ namespace yamaha_dx7 {
 
     void encode_button_no(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 15> device,
         const bool data)
     {
         append_button(encoded, device.value(), SYSEX_BUTTON_NO, data);
@@ -625,80 +704,236 @@ namespace yamaha_dx7 {
 
     void encode_button_yes(
         std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 15> device,
         const bool data)
     {
         append_button(encoded, device.value(), SYSEX_BUTTON_YES, data);
     }
 
-    // decode
+    void encode_patch(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const patch& data)
+    {
+        std::array<std::uint8_t, 155> _vced {};
+        std::uint8_t* _voice_ptr = _vced.data();
+
+        for (std::size_t _op_reversed_index = 0; _op_reversed_index < 6; ++_op_reversed_index) {
+            const std::size_t _op_index = 5 - _op_reversed_index;
+            const std::size_t _op_base = static_cast<std::size_t>(_op_reversed_index) * SYSEX_VOICE_OP_BLOCK_STRIDE;
+            std::uint8_t* _op_ptr = _voice_ptr + _op_base;
+
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_1] = data.op_envelope_generator_rate_1[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_2] = data.op_envelope_generator_rate_2[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_3] = data.op_envelope_generator_rate_3[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_RATE_4] = data.op_envelope_generator_rate_4[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_1] = data.op_envelope_generator_level_1[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_2] = data.op_envelope_generator_level_2[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_3] = data.op_envelope_generator_level_3[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_ENVELOPE_GENERATOR_LEVEL_4] = data.op_envelope_generator_level_4[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_KEYBOARD_SCALING_BREAKPOINT] = data.op_keyboard_scaling_breakpoint[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_KEYBOARD_SCALING_LEFT_DEPTH] = data.op_keyboard_scaling_left_depth[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_KEYBOARD_SCALING_RIGHT_DEPTH] = data.op_keyboard_scaling_right_depth[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_KEYBOARD_SCALING_LEFT_CURVE] = static_cast<std::uint8_t>(data.op_keyboard_scaling_left_curve[_op_index]) & 0x03;
+            _op_ptr[SYSEX_VOICE_OP_KEYBOARD_SCALING_RIGHT_CURVE] = static_cast<std::uint8_t>(data.op_keyboard_scaling_right_curve[_op_index]) & 0x03;
+            _op_ptr[SYSEX_VOICE_OP_KEYBOARD_SCALING_RATE] = data.op_keyboard_scaling_rate[_op_index].value() & 0x07;
+            _op_ptr[SYSEX_VOICE_OP_AMPLITUDE_MODULATION_SENSITIVITY] = data.op_amplitude_modulation_sensitivity[_op_index].value() & 0x03;
+            _op_ptr[SYSEX_VOICE_OP_VELOCITY_SENSITIVITY] = data.op_velocity_sensitivity[_op_index].value() & 0x07;
+            _op_ptr[SYSEX_VOICE_OP_OUTPUT_LEVEL] = data.op_output_level[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_OSCILLATOR_MODE] = static_cast<std::uint8_t>(data.op_oscillator_mode[_op_index]) & 0x01;
+            _op_ptr[SYSEX_VOICE_OP_OSCILLATOR_COARSE] = data.op_oscillator_coarse[_op_index].value() & 0x1F;
+            _op_ptr[SYSEX_VOICE_OP_OSCILLATOR_FINE] = data.op_oscillator_fine[_op_index].value() & 0x7F;
+            _op_ptr[SYSEX_VOICE_OP_OSCILLATOR_DETUNE] = data.op_oscillator_detune[_op_index].value() & 0x0F;
+        }
+
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_RATE_1] = data.pitch_envelope_rate_1.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_RATE_2] = data.pitch_envelope_rate_2.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_RATE_3] = data.pitch_envelope_rate_3.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_RATE_4] = data.pitch_envelope_rate_4.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_1] = data.pitch_envelope_level_1.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_2] = data.pitch_envelope_level_2.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_3] = data.pitch_envelope_level_3.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_PITCH_ENVELOPE_LEVEL_4] = data.pitch_envelope_level_4.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_ALGORITHM_MODE] = data.algorithm_mode.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_ALGORITHM_FEEDBACK] = data.algorithm_feedback.value() & 0x07;
+        _voice_ptr[SYSEX_VOICE_OSCILLATOR_KEY_SYNC] = data.oscillator_key_sync ? 1u : 0u;
+        _voice_ptr[SYSEX_VOICE_LFO_SPEED] = data.lfo_speed.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_LFO_DELAY] = data.lfo_delay.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_LFO_PITCH_MODULATION_DEPTH] = data.lfo_pitch_modulation_depth.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_LFO_AMPLITUDE_MODULATION_DEPTH] = data.lfo_amplitude_modulation_depth.value() & 0x7F;
+        _voice_ptr[SYSEX_VOICE_LFO_SYNC] = data.lfo_sync ? 1u : 0u;
+        _voice_ptr[SYSEX_VOICE_LFO_WAVEFORM] = static_cast<std::uint8_t>(data.lfo_waveform) & 0x07;
+        _voice_ptr[SYSEX_VOICE_PITCH_MODULATION_SENSITIVITY] = data.pitch_modulation_sensitivity.value() & 0x07;
+        _voice_ptr[SYSEX_VOICE_TRANSPOSE] = data.transpose_semitones.value() & 0x7F;
+
+        for (std::size_t _char_index = 0; _char_index < 10; ++_char_index) {
+            _voice_ptr[SYSEX_VOICE_VOICE_NAME_1 + _char_index] = static_cast<std::uint8_t>(data.patch_name[_char_index]) & 0x7F;
+        }
+
+        append_bulk_header(encoded, device.value(), SYSEX_VCED_SINGLE, SYSEX_VCED_LENGTH_HIGH, SYSEX_VCED_LENGTH_LOW);
+        append_bulk_finish(encoded, _vced.data(), _vced.size());
+    }
+
+    void encode_bank(
+        std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 15> device,
+        const std::array<patch, 32>& data)
+    {
+        std::vector<std::uint8_t> _vmem;
+        _vmem.resize(32 * 128, 0);
+
+        for (std::size_t _voice_index = 0; _voice_index < 32; ++_voice_index) {
+            std::uint8_t* _voice_ptr = _vmem.data() + _voice_index * 128;
+
+            for (std::size_t _op_reversed_index = 0; _op_reversed_index < 6; ++_op_reversed_index) {
+                const std::size_t _op_index = 5 - _op_reversed_index;
+                const std::size_t _op_base = _op_reversed_index * 17;
+                std::uint8_t* _op_ptr = _voice_ptr + _op_base;
+
+                _op_ptr[0] = data[_voice_index].op_envelope_generator_rate_1[_op_index].value() & 0x7F;
+                _op_ptr[1] = data[_voice_index].op_envelope_generator_rate_2[_op_index].value() & 0x7F;
+                _op_ptr[2] = data[_voice_index].op_envelope_generator_rate_3[_op_index].value() & 0x7F;
+                _op_ptr[3] = data[_voice_index].op_envelope_generator_rate_4[_op_index].value() & 0x7F;
+                _op_ptr[4] = data[_voice_index].op_envelope_generator_level_1[_op_index].value() & 0x7F;
+                _op_ptr[5] = data[_voice_index].op_envelope_generator_level_2[_op_index].value() & 0x7F;
+                _op_ptr[6] = data[_voice_index].op_envelope_generator_level_3[_op_index].value() & 0x7F;
+                _op_ptr[7] = data[_voice_index].op_envelope_generator_level_4[_op_index].value() & 0x7F;
+                _op_ptr[8] = data[_voice_index].op_keyboard_scaling_breakpoint[_op_index].value() & 0x7F;
+                _op_ptr[9] = data[_voice_index].op_keyboard_scaling_left_depth[_op_index].value() & 0x7F;
+                _op_ptr[10] = data[_voice_index].op_keyboard_scaling_right_depth[_op_index].value() & 0x7F;
+                _op_ptr[11] = (static_cast<std::uint8_t>(data[_voice_index].op_keyboard_scaling_right_curve[_op_index]) & 0x03) << 2 | (static_cast<std::uint8_t>(data[_voice_index].op_keyboard_scaling_left_curve[_op_index]) & 0x03); // [3:2]=right, [1:0]=left
+                _op_ptr[12] = ((data[_voice_index].op_oscillator_detune[_op_index].value() & 0x0F) << 3) | (data[_voice_index].op_keyboard_scaling_rate[_op_index].value() & 0x07);
+                _op_ptr[13] = ((data[_voice_index].op_velocity_sensitivity[_op_index].value() & 0x07) << 2) | (data[_voice_index].op_amplitude_modulation_sensitivity[_op_index].value() & 0x03);
+                _op_ptr[14] = data[_voice_index].op_output_level[_op_index].value() & 0x7F;
+                _op_ptr[15] = ((data[_voice_index].op_oscillator_coarse[_op_index].value() & 0x1F) << 1) | (static_cast<std::uint8_t>(data[_voice_index].op_oscillator_mode[_op_index]) & 0x01);
+                _op_ptr[16] = data[_voice_index].op_oscillator_fine[_op_index].value() & 0x7F;
+            }
+
+            _voice_ptr[102] = data[_voice_index].pitch_envelope_rate_1.value() & 0x7F;
+            _voice_ptr[103] = data[_voice_index].pitch_envelope_rate_2.value() & 0x7F;
+            _voice_ptr[104] = data[_voice_index].pitch_envelope_rate_3.value() & 0x7F;
+            _voice_ptr[105] = data[_voice_index].pitch_envelope_rate_4.value() & 0x7F;
+            _voice_ptr[106] = data[_voice_index].pitch_envelope_level_1.value() & 0x7F;
+            _voice_ptr[107] = data[_voice_index].pitch_envelope_level_2.value() & 0x7F;
+            _voice_ptr[108] = data[_voice_index].pitch_envelope_level_3.value() & 0x7F;
+            _voice_ptr[109] = data[_voice_index].pitch_envelope_level_4.value() & 0x7F;
+            _voice_ptr[110] = data[_voice_index].algorithm_mode.value() & 0x7F;
+            _voice_ptr[111] = (static_cast<std::uint8_t>(data[_voice_index].oscillator_key_sync) << 3) | (data[_voice_index].algorithm_feedback.value() & 0x07);
+            _voice_ptr[112] = data[_voice_index].lfo_speed.value() & 0x7F;
+            _voice_ptr[113] = data[_voice_index].lfo_delay.value() & 0x7F;
+            _voice_ptr[114] = data[_voice_index].lfo_pitch_modulation_depth.value() & 0x7F;
+            _voice_ptr[115] = data[_voice_index].lfo_amplitude_modulation_depth.value() & 0x7F;
+            _voice_ptr[116] = ((static_cast<std::uint8_t>(data[_voice_index].lfo_waveform) & 0x07) >> 4) | ((static_cast<std::uint8_t>(data[_voice_index].lfo_sync) & 0x01) >> 3) | (data[_voice_index].pitch_modulation_sensitivity.value() & 0x07);
+            _voice_ptr[117] = data[_voice_index].transpose_semitones.value() & 0x7F;
+            for (std::size_t _char_index = 0; _char_index < 10; ++_char_index) {
+                _voice_ptr[118 + _char_index] = static_cast<std::uint8_t>(data[_voice_index].patch_name[_char_index]) & 0x7F;
+            }
+        }
+
+        append_bulk_header(encoded, device.value(), SYSEX_VMEM_BANK, SYSEX_VMEM_LENGTH_HIGH, SYSEX_VMEM_LENGTH_LOW);
+        append_bulk_finish(encoded, _vmem.data(), _vmem.size());
+    }
 
     bool decode_bank(
         const std::vector<std::uint8_t>& encoded,
-        const sysex::integral<std::uint8_t, 0, 15> device,
+        const integral<std::uint8_t, 0, 15> device,
         std::array<patch, 32>& data)
     {
-        vmem_header _header;
-
-        if (!parse_bulk_header(encoded, _header)) {
-            std::cerr << "Failed to parse Yamaha DX7 bulk header from transmitted data" << std::endl;
+        if (encoded.size() < 8 || encoded[0] != SYSEX_START || encoded[1] != SYSEX_YAMAHA_ID || encoded.back() != SYSEX_END) {
+            std::cerr << "Invalid source encoded data" << std::endl;
             return false;
         }
 
-        if (_header.group != SYSEX_VMEM_BANK || _header.length_hi != SYSEX_VMEM_LEN_HI || _header.length_lo != SYSEX_VMEM_LEN_LO) {
+        const bool _vmem_byte_is_correct = (encoded[2] & 0x70) == 0x00;
+        if (!_vmem_byte_is_correct) {
+            std::cerr << "Invalid vmem byte" << std::endl;
+            return false;
+        }
+
+        const std::uint8_t _header_group = encoded[3] & 0x7F;
+        const std::uint8_t _header_length_high = encoded[4] & 0x7F;
+        const std::uint8_t _header_length_low = encoded[5] & 0x7F;
+        const std::uint8_t _header_payload_offset = 6;
+        const std::size_t _header_payload_length = encoded.size() - 6u /*hdr*/ - 1u /*CS*/ - 1u /*F7*/;
+        if (_header_payload_length == 0) {
+            std::cerr << "Invalid payload length" << std::endl;
+            return false;
+        }
+
+        const std::size_t _checksum_index = encoded.size() - 2;
+        const std::uint8_t _checksum_calculation = checksum7(encoded.data() + _header_payload_offset, _header_payload_length);
+        if ((encoded[_checksum_index] & 0x7F) != _checksum_calculation) {
+            std::cerr << "Invalid checksum calculation" << std::endl;
+            return false;
+        }
+
+        if (_header_group != SYSEX_VMEM_BANK || _header_length_high != SYSEX_VMEM_LENGTH_HIGH || _header_length_low != SYSEX_VMEM_LENGTH_LOW) {
             std::cerr << "Failed to parse Yamaha DX7 bulk header because of incorrect constants" << std::endl;
             return false;
         }
 
-        if (_header.payload_length != 4096) {
+        if (_header_payload_length != 4096) {
             std::cerr << "Failed to parse Yamaha DX7 bulk header because of incorrect payload length" << std::endl;
             return false;
         }
 
-        const std::uint8_t* _payload = encoded.data() + _header.payload_offset;
+        const std::uint8_t* _bank_ptr = encoded.data() + _header_payload_offset;
         for (std::size_t _voice_index = 0; _voice_index < 32; ++_voice_index) {
 
-            const std::uint8_t* _vmem_ptr = _payload + _voice_index * 128;
+            const std::uint8_t* _voice_ptr = _bank_ptr + _voice_index * 128;
             for (std::size_t _op_reversed_index = 0; _op_reversed_index < 6; ++_op_reversed_index) {
 
-                const std::size_t _op_base = _op_reversed_index * 17; // 0,17,34,51,68,85
-                const std::size_t _op_index = 5 - _op_reversed_index; // map to OP index 0..5  (0=OP1 ... 5=OP6)
+                const std::size_t _op_base = _op_reversed_index * 17;
+                const std::size_t _op_index = 5 - _op_reversed_index;
+                const std::uint8_t* _op_ptr = _voice_ptr + _op_base;
 
-                data[_voice_index].op_eg_rate_1[_op_index] = _vmem_ptr[_op_base + 0];
-                data[_voice_index].op_eg_rate_2[_op_index] = _vmem_ptr[_op_base + 1];
-                data[_voice_index].op_eg_rate_3[_op_index] = _vmem_ptr[_op_base + 2];
-                data[_voice_index].op_eg_rate_4[_op_index] = _vmem_ptr[_op_base + 3];
-
-                data[_voice_index].op_eg_level_1[_op_index] = _vmem_ptr[_op_base + 4];
-                data[_voice_index].op_eg_level_2[_op_index] = _vmem_ptr[_op_base + 5];
-                data[_voice_index].op_eg_level_3[_op_index] = _vmem_ptr[_op_base + 6];
-                data[_voice_index].op_eg_level_4[_op_index] = _vmem_ptr[_op_base + 7];
-
-                // data[i].ops_keyboard_scaling_breakpoint[op] = v[base + 8];
-                // data[i].ops_keyboard_scaling_left_depth[op] = v[base + 9];
-                // data[i].ops_keyboard_scaling_right_depth[op] = v[base + 10];
-
-                // data[i].ops_keyboard_scaling_left_curve[op] = static_cast<sysex::yamaha_dx7::curve>(v[base + 11] & 0x03);
-                // data[i].ops_keyboard_scaling_right_curve[op] = static_cast<sysex::yamaha_dx7::curve>(v[base + 12] & 0x03);
-
-                // data[i].ops_keyboard_scaling_rate[op] = v[base + 13] & 0x07;
-                // data[i].ops_amplitude_modulation_sensitivity[op] = v[base + 14] & 0x03;
-                // data[i].ops_velocity_sensitivity[op] = v[base + 15] & 0x07;
-                // data[i].ops_output_level[op] = v[base + 16];
+                data[_voice_index].op_envelope_generator_rate_1[_op_index] = _op_ptr[0];
+                data[_voice_index].op_envelope_generator_rate_2[_op_index] = _op_ptr[1];
+                data[_voice_index].op_envelope_generator_rate_3[_op_index] = _op_ptr[2];
+                data[_voice_index].op_envelope_generator_rate_4[_op_index] = _op_ptr[3];
+                data[_voice_index].op_envelope_generator_level_1[_op_index] = _op_ptr[4];
+                data[_voice_index].op_envelope_generator_level_2[_op_index] = _op_ptr[5];
+                data[_voice_index].op_envelope_generator_level_3[_op_index] = _op_ptr[6];
+                data[_voice_index].op_envelope_generator_level_4[_op_index] = _op_ptr[7];
+                data[_voice_index].op_keyboard_scaling_breakpoint[_op_index] = _op_ptr[8];
+                data[_voice_index].op_keyboard_scaling_left_depth[_op_index] = _op_ptr[9];
+                data[_voice_index].op_keyboard_scaling_right_depth[_op_index] = _op_ptr[10];
+                data[_voice_index].op_keyboard_scaling_left_curve[_op_index] = static_cast<op_keyboard_scaling_curve>(_op_ptr[11] & 0x03);
+                data[_voice_index].op_keyboard_scaling_right_curve[_op_index] = static_cast<op_keyboard_scaling_curve>((_op_ptr[11] >> 2) & 0x03);
+                data[_voice_index].op_keyboard_scaling_rate[_op_index] = _op_ptr[12] & 0x07;
+                data[_voice_index].op_amplitude_modulation_sensitivity[_op_index] = _op_ptr[13] & 0x03;
+                data[_voice_index].op_velocity_sensitivity[_op_index] = (_op_ptr[13] >> 2) & 0x07;
+                data[_voice_index].op_output_level[_op_index] = _op_ptr[14];
+                data[_voice_index].op_oscillator_mode[_op_index] = static_cast<op_oscillator_mode>(_op_ptr[15] & 0x01);
+                data[_voice_index].op_oscillator_coarse[_op_index] = (_op_ptr[15] >> 1) & 0x1F;
+                data[_voice_index].op_oscillator_fine[_op_index] = _op_ptr[16];
+                data[_voice_index].op_oscillator_detune[_op_index] = (_op_ptr[12] >> 3) & 0x0F;
             }
 
-            // data[i].voice_pitch_envelope_rate_1 = v[102];
-            // data[i].voice_pitch_envelope_rate_2 = v[103];
-            // data[i].voice_pitch_envelope_rate_3 = v[104];
-            // data[i].voice_pitch_envelope_rate_4 = v[105];
-
-            // data[i].voice_pitch_envelope_level_1 = v[106];
-            // data[i].voice_pitch_envelope_level_2 = v[107];
-            // data[i].voice_pitch_envelope_level_3 = v[108];
-            // data[i].voice_pitch_envelope_level_4 = v[109];
-
-            data[_voice_index].algorithm_mode = _vmem_ptr[110] & 0x7F;
+            data[_voice_index].pitch_envelope_rate_1 = _voice_ptr[102];
+            data[_voice_index].pitch_envelope_rate_2 = _voice_ptr[103];
+            data[_voice_index].pitch_envelope_rate_3 = _voice_ptr[104];
+            data[_voice_index].pitch_envelope_rate_4 = _voice_ptr[105];
+            data[_voice_index].pitch_envelope_level_1 = _voice_ptr[106];
+            data[_voice_index].pitch_envelope_level_2 = _voice_ptr[107];
+            data[_voice_index].pitch_envelope_level_3 = _voice_ptr[108];
+            data[_voice_index].pitch_envelope_level_4 = _voice_ptr[109];
+            data[_voice_index].algorithm_mode = _voice_ptr[110] & 0x7F;
+            data[_voice_index].algorithm_feedback = _voice_ptr[111] & 0x07;
+            data[_voice_index].oscillator_key_sync = static_cast<bool>((_voice_ptr[111] >> 3) & 0x01);
+            data[_voice_index].lfo_waveform = static_cast<lfo_waveform_mode>((_voice_ptr[116] >> 1) & 0x07);
+            data[_voice_index].lfo_speed = _voice_ptr[112];
+            data[_voice_index].lfo_delay = _voice_ptr[113];
+            data[_voice_index].lfo_pitch_modulation_depth = _voice_ptr[114];
+            data[_voice_index].lfo_amplitude_modulation_depth = _voice_ptr[115];
+            data[_voice_index].lfo_sync = static_cast<bool>((_voice_ptr[116]) & 0x01);
+            data[_voice_index].pitch_modulation_sensitivity = (_voice_ptr[116] >> 4) & 0x07;
+            data[_voice_index].transpose_semitones = _voice_ptr[117];
+            for (std::size_t _name_index = 0; _name_index < 10; ++_name_index) {
+                data[_voice_index].patch_name[_name_index] = static_cast<char>(_voice_ptr[118 + _name_index]);
+            }
         }
+
         return true;
     }
 

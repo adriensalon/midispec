@@ -21,3 +21,8 @@ target_compile_definitions(sysex_test INTERFACE -DSYSEX_TEST_OUT_MIDIPORT=1)
 add_executable(sysex_test_yamaha_dx7 "test/test_yamaha_dx7.cpp")
 set_target_properties(sysex_test_yamaha_dx7 PROPERTIES CXX_STANDARD 17)
 target_link_libraries(sysex_test_yamaha_dx7 PRIVATE sysex_test)
+
+# sysex_test [yamaha spx90]
+add_executable(sysex_test_yamaha_spx90 "test/test_yamaha_spx90.cpp")
+set_target_properties(sysex_test_yamaha_spx90 PROPERTIES CXX_STANDARD 17)
+target_link_libraries(sysex_test_yamaha_spx90 PRIVATE sysex_test)
