@@ -12,7 +12,7 @@ static_assert(has_reset_v<novation_launchpad, capability::receive>);
 // channel common
 
 namespace {
-    static constexpr std::uint8_t CHANNEL_LAUNCHPAD = 0;
+    static constexpr std::uint8_t CHANNEL_LAUNCHPAD = 0x00;
 }
 
 void novation_launchpad::encode_note_off(

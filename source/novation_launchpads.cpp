@@ -13,7 +13,7 @@ static_assert(has_universal_inquiry_v<novation_launchpads, capability::request, 
 // channel common
 
 namespace {
-    static constexpr std::uint8_t CHANNEL_LAUNCHPAD = 0;
+    static constexpr std::uint8_t CHANNEL_LAUNCHPAD = 0x00;
 }
 
 void novation_launchpads::encode_note_off(
