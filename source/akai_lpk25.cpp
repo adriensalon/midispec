@@ -38,7 +38,6 @@ bool akai_lpk25::decode_note_off(
 
     channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
-
     return true;
 }
 
@@ -68,7 +67,6 @@ bool akai_lpk25::decode_note_on(
     channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     velocity = encoded[2] & 0x7F;
-
     return true;
 }
 

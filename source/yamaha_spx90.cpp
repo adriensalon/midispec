@@ -40,7 +40,6 @@ void yamaha_spx90::encode_program_change(
     encoded.push_back(program.value());
 }
 
-// not tested
 // system exclusive
 
 namespace {
@@ -58,19 +57,19 @@ namespace {
     }
 }
 
-void yamaha_spx90::encode_program_patch_bank_request(
-    std::vector<std::uint8_t>& encoded,
-    const integral<std::uint8_t, 0, 15> device,
-    const integral<std::uint8_t, 0, 3> bank)
-{
-    encoded.push_back(SYSEX_START);
-    encoded.push_back(SYSEX_YAMAHA);
-    encoded.push_back(0x20 | (device.value() & 0x0F));
-    encoded.push_back(0x7E);
-    encoded.insert(encoded.end(), { 0x4C, 0x4D, 0x20, 0x20, 0x38, 0x33, 0x33, 0x32, 0x55 }); // LM  8332U
-    encoded.push_back((bank.value() + 1) & 0x7F);
-    encoded.push_back(SYSEX_END);
-}
+// void yamaha_spx90::encode_program_patch_bank_request(
+//     std::vector<std::uint8_t>& encoded,
+//     const integral<std::uint8_t, 0, 15> device,
+//     const integral<std::uint8_t, 0, 3> bank)
+// {
+//     encoded.push_back(SYSEX_START);
+//     encoded.push_back(SYSEX_YAMAHA);
+//     encoded.push_back(0x20 | (device.value() & 0x0F));
+//     encoded.push_back(0x7E);
+//     encoded.insert(encoded.end(), { 0x4C, 0x4D, 0x20, 0x20, 0x38, 0x33, 0x33, 0x32, 0x55 }); // LM  8332U
+//     encoded.push_back((bank.value() + 1) & 0x7F);
+//     encoded.push_back(SYSEX_END);
+// }
 
 // bool decode_parameters(
 //     const std::vector<std::uint8_t>& encoded,

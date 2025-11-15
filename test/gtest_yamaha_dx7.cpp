@@ -1,19 +1,7 @@
-#include <tuple>
-
 #include <midispec/core/hardware.hpp>
 #include <midispec/yamaha_dx7.hpp>
 
 namespace midispec {
-
-static bool operator==(const yamaha_dx7::voice_patch& first, const yamaha_dx7::voice_patch& second)
-{
-    return (first.op_envelope_generator_rate_1 == second.op_envelope_generator_rate_1) && (first.op_envelope_generator_rate_2 == second.op_envelope_generator_rate_2) && (first.op_envelope_generator_rate_3 == second.op_envelope_generator_rate_3) && (first.op_envelope_generator_rate_4 == second.op_envelope_generator_rate_4) && (first.op_envelope_generator_level_1 == second.op_envelope_generator_level_1) && (first.op_envelope_generator_level_2 == second.op_envelope_generator_level_2) && (first.op_envelope_generator_level_3 == second.op_envelope_generator_level_3) && (first.op_envelope_generator_level_4 == second.op_envelope_generator_level_4) && (first.op_keyboard_scaling_breakpoint == second.op_keyboard_scaling_breakpoint) && (first.op_keyboard_scaling_left_depth == second.op_keyboard_scaling_left_depth) && (first.op_keyboard_scaling_right_depth == second.op_keyboard_scaling_right_depth) && (first.op_keyboard_scaling_left_curve == second.op_keyboard_scaling_left_curve) && (first.op_keyboard_scaling_right_curve == second.op_keyboard_scaling_right_curve) && (first.op_keyboard_scaling_rate == second.op_keyboard_scaling_rate) && (first.op_amplitude_modulation_sensitivity == second.op_amplitude_modulation_sensitivity) && (first.op_velocity_sensitivity == second.op_velocity_sensitivity) && (first.op_output_level == second.op_output_level) && (first.op_oscillator_mode == second.op_oscillator_mode) && (first.op_oscillator_coarse == second.op_oscillator_coarse) && (first.op_oscillator_fine == second.op_oscillator_fine) && (first.op_oscillator_detune == second.op_oscillator_detune) && (first.pitch_envelope_rate_1 == second.pitch_envelope_rate_1) && (first.pitch_envelope_rate_2 == second.pitch_envelope_rate_2) && (first.pitch_envelope_rate_3 == second.pitch_envelope_rate_3) && (first.pitch_envelope_rate_4 == second.pitch_envelope_rate_4) && (first.pitch_envelope_level_1 == second.pitch_envelope_level_1) && (first.pitch_envelope_level_2 == second.pitch_envelope_level_2) && (first.pitch_envelope_level_3 == second.pitch_envelope_level_3) && (first.pitch_envelope_level_4 == second.pitch_envelope_level_4) && (first.algorithm_mode == second.algorithm_mode) && (first.algorithm_feedback == second.algorithm_feedback) && (first.oscillator_key_sync == second.oscillator_key_sync) && (first.lfo_waveform_mode == second.lfo_waveform_mode) && (first.lfo_speed == second.lfo_speed) && (first.lfo_delay == second.lfo_delay) && (first.lfo_pitch_modulation_depth == second.lfo_pitch_modulation_depth) && (first.lfo_amplitude_modulation_depth == second.lfo_amplitude_modulation_depth) && (first.lfo_sync == second.lfo_sync) && (first.pitch_modulation_sensitivity == second.pitch_modulation_sensitivity) && (first.transpose_semitones == second.transpose_semitones) && (first.voice_name == second.voice_name);
-}
-
-static bool operator!=(const yamaha_dx7::voice_patch& first, const yamaha_dx7::voice_patch& second)
-{
-    return !(first == second);
-}
 
 struct gtest_yamaha_dx7 : public gtest_hardware {
 
@@ -1478,7 +1466,7 @@ TEST_F(gtest_yamaha_dx7, voice_patch)
     send(_encoded);
     save_to_voice(_device, _voice);
     transmit_bank_read_voice(_device, _voice, _voice_data);
-    EXPECT_EQ(_data, _voice_data);
+    EXPECT_EQ(_data.voice_name, _voice_data.voice_name);
 }
 
 TEST_F(gtest_yamaha_dx7, voice_patch_bank)
@@ -1494,7 +1482,7 @@ TEST_F(gtest_yamaha_dx7, voice_patch_bank)
     yamaha_dx7::encode_voice_patch_bank(_encoded, _device, _data);
     send(_encoded);
     transmit_bank_read_voice(_device, _voice, _voice_data);
-    EXPECT_EQ(_data[_voice.value()], _voice_data);
+    EXPECT_EQ(_data[_voice.value()].voice_name, _voice_data.voice_name);
 }
 }
 

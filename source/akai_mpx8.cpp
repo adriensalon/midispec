@@ -39,7 +39,6 @@ bool akai_mpx8::decode_note_off(
     channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     velocity = encoded[2] & 0x7F;
-
     return true;
 }
 
@@ -70,7 +69,6 @@ bool akai_mpx8::decode_note_on(
     channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     velocity = encoded[2] & 0x7F;
-
     return true;
 }
 
@@ -93,15 +91,16 @@ bool akai_mpx8::decode_note_aftertouch(
     channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     aftertouch = encoded[2] & 0x7F;
-
     return true;
 }
 
 // system exclusive
 
-static constexpr std::uint8_t SYSEX_START = 0xF0;
-static constexpr std::uint8_t SYSEX_END = 0xF7;
-static constexpr std::uint8_t SYSEX_AKAI = 0x7E;
+namespace {
+    static constexpr std::uint8_t SYSEX_START = 0xF0;
+    static constexpr std::uint8_t SYSEX_END = 0xF7;
+    static constexpr std::uint8_t SYSEX_AKAI = 0x7E;
+}
 
 void akai_mpx8::encode_universal_inquiry_request(
     std::vector<std::uint8_t>& encoded,
@@ -172,7 +171,6 @@ bool akai_mpx8::decode_universal_inquiry(
     _index += 2;
 
     version = (static_cast<std::uint32_t>(encoded[_index]) << 24) | (static_cast<std::uint32_t>(encoded[_index + 1]) << 16) | (static_cast<std::uint32_t>(encoded[_index + 2]) << 8) | static_cast<std::uint32_t>(encoded[_index + 3]);
-
     return true;
 }
 }

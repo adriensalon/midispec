@@ -43,16 +43,5 @@ struct yamaha_spx90 {
         std::vector<std::uint8_t>& encoded,
         const integral<std::uint8_t, 0, 15> channel,
         const integral<std::uint8_t, 0, 127> program);
-
-    // system exclusive
-
-    /// @brief Encodes a bank request message
-    /// @param encoded Vector to decode the SysEx message from
-    /// @param device Expected target device number. In range [0, 15]
-    /// @param bank Selected bank to request. In range [0, 3]
-    static void encode_program_patch_bank_request(
-        std::vector<std::uint8_t>& encoded,
-        const integral<std::uint8_t, 0, 15> device,
-        const integral<std::uint8_t, 0, 3> bank);
 };
 }

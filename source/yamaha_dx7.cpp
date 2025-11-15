@@ -178,7 +178,6 @@ bool yamaha_dx7::decode_note_off(
 
     channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
-
     return true;
 }
 
@@ -209,7 +208,6 @@ bool yamaha_dx7::decode_note_on(
     channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     velocity = encoded[2] & 0x7F;
-
     return true;
 }
 
@@ -236,7 +234,6 @@ bool yamaha_dx7::decode_program_change(
 
     channel = encoded[0] & 0x0F;
     program = encoded[1] & 0x7F;
-
     return true;
 }
 
@@ -264,7 +261,6 @@ bool yamaha_dx7::decode_pitchbend_change(
 
     channel = encoded[0] & 0x0F;
     pitchbend = ((encoded[2] & 0x7F) << 7) | encoded[1] & 0x7F;
-
     return true;
 }
 
@@ -282,7 +278,6 @@ bool yamaha_dx7::decode_channel_pressure(
 
     channel = encoded[0] & 0x0F;
     pressure = encoded[1] & 0x7F;
-
     return true;
 }
 
