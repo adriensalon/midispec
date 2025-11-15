@@ -99,7 +99,6 @@ bool akai_mpx8::decode_note_aftertouch(
 namespace {
     static constexpr std::uint8_t SYSEX_START = 0xF0;
     static constexpr std::uint8_t SYSEX_END = 0xF7;
-    static constexpr std::uint8_t SYSEX_AKAI = 0x7E;
 }
 
 void akai_mpx8::encode_universal_inquiry_request(
@@ -107,7 +106,7 @@ void akai_mpx8::encode_universal_inquiry_request(
     const integral<std::uint8_t, 0, 127> device)
 {
     encoded.push_back(SYSEX_START);
-    encoded.push_back(SYSEX_AKAI);
+    encoded.push_back(0x7E);
     encoded.push_back(device.value() & 0x7F);
     encoded.push_back(0x06);
     encoded.push_back(0x01);
@@ -128,7 +127,7 @@ bool akai_mpx8::decode_universal_inquiry(
     if (encoded[0] != SYSEX_START) {
         return false;
     }
-    if (encoded[1] != SYSEX_AKAI) {
+    if (encoded[1] != 0x7E) {
         return false;
     }
     if (encoded[3] != 0x06) {

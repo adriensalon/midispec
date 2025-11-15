@@ -139,19 +139,55 @@ void novation_launchpads::encode_led_buffers_mode(
 namespace {
     static constexpr std::uint8_t SYSEX_START = 0xF0;
     static constexpr std::uint8_t SYSEX_END = 0xF7;
-    static constexpr std::uint8_t SYSEX_AKAI = 0x7E;
+    static constexpr std::uint8_t SYSEX_NOVATION = 0x00;
 }
 
 void novation_launchpads::encode_scrolling_text(
     std::vector<std::uint8_t>& encoded,
+    const integral<std::uint8_t, 0, 63> color,
+    const integral<std::uint8_t, 0, 6> speed,
+    const integral<std::uint8_t, 0, 1> loop,
     const std::string& text)
 {
+    if (text.empty()) {
+        encode_scrolling_text_stop(encoded);
+        return;
+    }
+
+    encoded.push_back(SYSEX_START);
+    encoded.push_back(SYSEX_NOVATION);
+    encoded.push_back(0x20);
+    encoded.push_back(0x29);
+    encoded.push_back(0x09);
+    encoded.push_back(loop.value() > 0 ? color.value() | 0x40 : color.value());
+    encoded.push_back(speed.value() + 1);
+    for (unsigned char _text_char : text) {
+        encoded.push_back(_text_char <= 0x7F ? _text_char : '?');
+    }
+    encoded.push_back(SYSEX_END);
+}
+
+void novation_launchpads::encode_scrolling_text_stop(std::vector<std::uint8_t>& encoded)
+{
+    encoded.push_back(SYSEX_START);
+    encoded.push_back(SYSEX_NOVATION);
+    encoded.push_back(0x20);
+    encoded.push_back(0x29);
+    encoded.push_back(0x09);
+    encoded.push_back(0x00);
+    encoded.push_back(SYSEX_END);
 }
 
 void novation_launchpads::encode_universal_inquiry_request(
     std::vector<std::uint8_t>& encoded,
     const integral<std::uint8_t, 0, 127> device)
 {
+    encoded.push_back(SYSEX_START);
+    encoded.push_back(0x7E);
+    encoded.push_back(device.value() & 0x7F);
+    encoded.push_back(0x06);
+    encoded.push_back(0x01);
+    encoded.push_back(SYSEX_END);
 }
 
 bool novation_launchpads::decode_universal_inquiry(
@@ -162,6 +198,55 @@ bool novation_launchpads::decode_universal_inquiry(
     std::uint32_t& model,
     std::uint32_t& version)
 {
+    if (encoded.size() < 15) {
+        return false;
+    }
+    if (encoded[0] != SYSEX_START) {
+        return false;
+    }
+    if (encoded[1] != 0x7E) {
+        return false;
+    }
+    if (encoded[3] != 0x06) {
+        return false;
+    }
+    if (encoded[4] != 0x02) {
+        return false;
+    }
+    if (encoded.back() != SYSEX_END) {
+        return false;
+    }
+    for (std::size_t _index = 1; _index + 1 < encoded.size(); ++_index) {
+        if (encoded[_index] & 0x80) {
+            return false;
+        }
+    }
+
+    device = encoded[2] & 0x7F;
+    std::size_t _index = 5;
+
+    if (encoded[_index] == 0x00) {
+        if (encoded.size() < _index + 3 + 2 + 2 + 4 + 1) {
+            return false;
+        }
+        manufacturer = (static_cast<std::uint32_t>(encoded[_index]) << 16) | (static_cast<std::uint32_t>(encoded[_index + 1]) << 8) | static_cast<std::uint32_t>(encoded[_index + 2]);
+        _index += 3;
+
+    } else {
+        if (encoded.size() < _index + 1 + 2 + 2 + 4 + 1) {
+            return false;
+        }
+        manufacturer = static_cast<std::uint32_t>(encoded[_index]);
+        _index += 1;
+    }
+
+    family = static_cast<std::uint32_t>(encoded[_index] | (encoded[_index + 1] << 8));
+    _index += 2;
+
+    model = static_cast<std::uint32_t>(encoded[_index] | (encoded[_index + 1] << 8));
+    _index += 2;
+
+    version = (static_cast<std::uint32_t>(encoded[_index]) << 24) | (static_cast<std::uint32_t>(encoded[_index + 1]) << 16) | (static_cast<std::uint32_t>(encoded[_index + 2]) << 8) | static_cast<std::uint32_t>(encoded[_index + 3]);
     return true;
 }
 

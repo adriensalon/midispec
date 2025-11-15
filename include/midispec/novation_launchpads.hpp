@@ -86,10 +86,20 @@ struct novation_launchpads {
 
     /// @brief Encodes a brightness change message
     /// @param encoded Vector to append the encoded message to
-    /// @param text scrolling text data
+    /// @param color Color to scroll text to. In range [0, 63]
+    /// @param speed Speed to scroll text to. In range [0, 63]
+    /// @param loop If the text scroll must loop. In range [0, 1]
+    /// @param text Scrolling text data
     static void encode_scrolling_text(
         std::vector<std::uint8_t>& encoded,
+        const integral<std::uint8_t, 0, 63> color,
+        const integral<std::uint8_t, 0, 6> speed,
+        const integral<std::uint8_t, 0, 1> loop,
         const std::string& text);
+
+    /// @brief Encodes a brightness change message
+    /// @param encoded Vector to append the encoded message to
+    static void encode_scrolling_text_stop(std::vector<std::uint8_t>& encoded);
 
     /// @brief Encodes a universal inquiry request message
     /// @param encoded Vector to append the encoded SysEx message to

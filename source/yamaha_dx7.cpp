@@ -11,6 +11,137 @@ static_assert(has_program_change_v<yamaha_dx7, capability::receive, capability::
 static_assert(has_pitchbend_change_v<yamaha_dx7, capability::receive, capability::transmit>);
 static_assert(has_voice_patch_v<yamaha_dx7, capability::receive>);
 
+// channel common
+
+void yamaha_dx7::encode_note_off(
+    std::vector<std::uint8_t>& encoded,
+    const integral<std::uint8_t, 0, 15> channel,
+    const integral<std::uint8_t, 0, 127> note)
+{
+    encoded.push_back(0x80 | (channel.value() & 0x0F));
+    encoded.push_back(note.value() & 0x7F);
+    encoded.push_back(0x00);
+}
+
+bool yamaha_dx7::decode_note_off(
+    const std::vector<std::uint8_t>& encoded,
+    integral<std::uint8_t, 0, 15>& channel,
+    integral<std::uint8_t, 0, 127>& note)
+{
+    if (encoded.size() != 3) {
+        return false;
+    }
+    if ((encoded[0] & 0xF0) != 0x80) {
+        return false;
+    }
+
+    channel = encoded[0] & 0x0F;
+    note = encoded[1] & 0x7F;
+    return true;
+}
+
+void yamaha_dx7::encode_note_on(
+    std::vector<std::uint8_t>& encoded,
+    const integral<std::uint8_t, 0, 15> channel,
+    const integral<std::uint8_t, 0, 127> note,
+    const integral<std::uint8_t, 0, 127> velocity)
+{
+    encoded.push_back(0x90 | (channel.value() & 0x0F));
+    encoded.push_back(note.value() & 0x7F);
+    encoded.push_back(velocity.value() & 0x7F);
+}
+
+bool yamaha_dx7::decode_note_on(
+    const std::vector<std::uint8_t>& encoded,
+    integral<std::uint8_t, 0, 15>& channel,
+    integral<std::uint8_t, 0, 127>& note,
+    integral<std::uint8_t, 0, 127>& velocity)
+{
+    if (encoded.size() != 3) {
+        return false;
+    }
+    if ((encoded[0] & 0xF0) != 0x90) {
+        return false;
+    }
+
+    channel = encoded[0] & 0x0F;
+    note = encoded[1] & 0x7F;
+    velocity = encoded[2] & 0x7F;
+    return true;
+}
+
+void yamaha_dx7::encode_program_change(
+    std::vector<std::uint8_t>& encoded,
+    const integral<std::uint8_t, 0, 15> channel,
+    const integral<std::uint8_t, 0, 31> program)
+{
+    encoded.push_back(0xC0 | (channel.value() & 0x0F));
+    encoded.push_back(program.value() & 0x7F);
+}
+
+bool yamaha_dx7::decode_program_change(
+    const std::vector<std::uint8_t>& encoded,
+    integral<std::uint8_t, 0, 15>& channel,
+    integral<std::uint8_t, 0, 31>& program)
+{
+    if (encoded.size() != 2) {
+        return false;
+    }
+    if ((encoded[0] & 0xF0) != 0xC0) {
+        return false;
+    }
+
+    channel = encoded[0] & 0x0F;
+    program = encoded[1] & 0x7F;
+    return true;
+}
+
+void yamaha_dx7::encode_pitchbend_change(
+    std::vector<std::uint8_t>& encoded,
+    const integral<std::uint8_t, 0, 15> channel,
+    const integral<std::uint16_t, 0, 16383, 8192> pitchbend)
+{
+    encoded.push_back(0xE0 | (channel.value() & 0x0F));
+    encoded.push_back(static_cast<std::uint8_t>(pitchbend.value() & 0x7F));
+    encoded.push_back(static_cast<std::uint8_t>((pitchbend.value() >> 7) & 0x7F));
+}
+
+bool yamaha_dx7::decode_pitchbend_change(
+    const std::vector<std::uint8_t>& encoded,
+    integral<std::uint8_t, 0, 15>& channel,
+    integral<std::uint16_t, 0, 16383, 8192>& pitchbend)
+{
+    if (encoded.size() != 3) {
+        return false;
+    }
+    if ((encoded[0] & 0xF0) != 0xE0) {
+        return false;
+    }
+
+    channel = encoded[0] & 0x0F;
+    pitchbend = ((encoded[2] & 0x7F) << 7) | encoded[1] & 0x7F;
+    return true;
+}
+
+bool yamaha_dx7::decode_channel_pressure(
+    const std::vector<std::uint8_t>& encoded,
+    integral<std::uint8_t, 0, 15>& channel,
+    integral<std::uint8_t, 0, 127>& pressure)
+{
+    if (encoded.size() != 2) {
+        return false;
+    }
+    if ((encoded[0] & 0xF0) != 0xD0) {
+        return false;
+    }
+
+    channel = encoded[0] & 0x0F;
+    pressure = encoded[1] & 0x7F;
+    return true;
+}
+
+// system exclusive
+
 namespace {
     static constexpr std::uint8_t SYSEX_START = 0xF0;
     static constexpr std::uint8_t SYSEX_END = 0xF7;
@@ -151,137 +282,6 @@ namespace {
         encoded.push_back(SYSEX_END);
     }
 }
-
-// channel common
-
-void yamaha_dx7::encode_note_off(
-    std::vector<std::uint8_t>& encoded,
-    const integral<std::uint8_t, 0, 15> channel,
-    const integral<std::uint8_t, 0, 127> note)
-{
-    encoded.push_back(0x80 | (channel.value() & 0x0F));
-    encoded.push_back(note.value() & 0x7F);
-    encoded.push_back(0x00);
-}
-
-bool yamaha_dx7::decode_note_off(
-    const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
-    integral<std::uint8_t, 0, 127>& note)
-{
-    if (encoded.size() != 3) {
-        return false;
-    }
-    if ((encoded[0] & 0xF0) != 0x80) {
-        return false;
-    }
-
-    channel = encoded[0] & 0x0F;
-    note = encoded[1] & 0x7F;
-    return true;
-}
-
-void yamaha_dx7::encode_note_on(
-    std::vector<std::uint8_t>& encoded,
-    const integral<std::uint8_t, 0, 15> channel,
-    const integral<std::uint8_t, 0, 127> note,
-    const integral<std::uint8_t, 0, 127> velocity)
-{
-    encoded.push_back(0x90 | (channel.value() & 0x0F));
-    encoded.push_back(note.value() & 0x7F);
-    encoded.push_back(velocity.value() & 0x7F);
-}
-
-bool yamaha_dx7::decode_note_on(
-    const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
-    integral<std::uint8_t, 0, 127>& note,
-    integral<std::uint8_t, 0, 127>& velocity)
-{
-    if (encoded.size() != 3) {
-        return false;
-    }
-    if ((encoded[0] & 0xF0) != 0x90) {
-        return false;
-    }
-
-    channel = encoded[0] & 0x0F;
-    note = encoded[1] & 0x7F;
-    velocity = encoded[2] & 0x7F;
-    return true;
-}
-
-void yamaha_dx7::encode_program_change(
-    std::vector<std::uint8_t>& encoded,
-    const integral<std::uint8_t, 0, 15> channel,
-    const integral<std::uint8_t, 0, 31> program)
-{
-    encoded.push_back(0xC0 | (channel.value() & 0x0F));
-    encoded.push_back(program.value() & 0x7F);
-}
-
-bool yamaha_dx7::decode_program_change(
-    const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
-    integral<std::uint8_t, 0, 31>& program)
-{
-    if (encoded.size() != 2) {
-        return false;
-    }
-    if ((encoded[0] & 0xF0) != 0xC0) {
-        return false;
-    }
-
-    channel = encoded[0] & 0x0F;
-    program = encoded[1] & 0x7F;
-    return true;
-}
-
-void yamaha_dx7::encode_pitchbend_change(
-    std::vector<std::uint8_t>& encoded,
-    const integral<std::uint8_t, 0, 15> channel,
-    const integral<std::uint16_t, 0, 16383, 8192> pitchbend)
-{
-    encoded.push_back(0xE0 | (channel.value() & 0x0F));
-    encoded.push_back(static_cast<std::uint8_t>(pitchbend.value() & 0x7F));
-    encoded.push_back(static_cast<std::uint8_t>((pitchbend.value() >> 7) & 0x7F));
-}
-
-bool yamaha_dx7::decode_pitchbend_change(
-    const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
-    integral<std::uint16_t, 0, 16383, 8192>& pitchbend)
-{
-    if (encoded.size() != 3) {
-        return false;
-    }
-    if ((encoded[0] & 0xF0) != 0xE0) {
-        return false;
-    }
-
-    channel = encoded[0] & 0x0F;
-    pitchbend = ((encoded[2] & 0x7F) << 7) | encoded[1] & 0x7F;
-    return true;
-}
-
-bool yamaha_dx7::decode_channel_pressure(
-    const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
-    integral<std::uint8_t, 0, 127>& pressure)
-{
-    if (encoded.size() != 2) {
-        return false;
-    }
-    if ((encoded[0] & 0xF0) != 0xD0) {
-        return false;
-    }
-
-    channel = encoded[0] & 0x0F;
-    pressure = encoded[1] & 0x7F;
-    return true;
-}
-
-// system exclusive
 
 void yamaha_dx7::encode_op_envelope_generator_rate_1(
     std::vector<std::uint8_t>& encoded,
