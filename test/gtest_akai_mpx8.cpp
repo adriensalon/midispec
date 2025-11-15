@@ -19,9 +19,11 @@ TEST_F(gtest_akai_mpx8, universal_inquiry)
     send(_encoded);
     EXPECT_TRUE(receive(_encoded));
     EXPECT_TRUE(akai_mpx8::decode_universal_inquiry(_encoded, _received_device, _received_manufacturer, _received_family, _received_model, _received_version));
-    // EXPECT_EQ(_received_manufacturer, "TODO");
-    // EXPECT_EQ(_received_family, "TODO");
-    // EXPECT_EQ(_received_model, "TODO");
+    EXPECT_EQ(_device, _received_device);
+    EXPECT_EQ(_received_manufacturer, 71);
+    EXPECT_EQ(_received_family, 25);
+    EXPECT_EQ(_received_model, 25);
+    // when tested version == 256
 }
 }
 

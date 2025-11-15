@@ -12,20 +12,22 @@ static_assert(has_universal_inquiry_v<akai_mpx8, capability::request, capability
 
 // channel common
 
+namespace {
+    static constexpr std::uint8_t CHANNEL_MPX8 = 9;
+}
+
 void akai_mpx8::encode_note_off(
     std::vector<std::uint8_t>& encoded,
-    const integral<std::uint8_t, 0, 15> channel,
     const integral<std::uint8_t, 0, 127> note,
     const integral<std::uint8_t, 0, 127> velocity)
 {
-    encoded.push_back(0x80 | (channel.value() & 0x0F));
+    encoded.push_back(0x80 | CHANNEL_MPX8);
     encoded.push_back(note.value() & 0x7F);
     encoded.push_back(velocity.value() & 0x7F);
 }
 
 bool akai_mpx8::decode_note_off(
     const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
     integral<std::uint8_t, 0, 127>& note,
     integral<std::uint8_t, 0, 127>& velocity)
 {
@@ -35,8 +37,10 @@ bool akai_mpx8::decode_note_off(
     if ((encoded[0] & 0xF0) != 0x80) {
         return false;
     }
+    if ((encoded[0] & 0x0F) != CHANNEL_MPX8) {
+        return false;
+    }
 
-    channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     velocity = encoded[2] & 0x7F;
     return true;
@@ -44,18 +48,16 @@ bool akai_mpx8::decode_note_off(
 
 void akai_mpx8::encode_note_on(
     std::vector<std::uint8_t>& encoded,
-    const integral<std::uint8_t, 0, 15> channel,
     const integral<std::uint8_t, 0, 127> note,
     const integral<std::uint8_t, 0, 127> velocity)
 {
-    encoded.push_back(0x90 | (channel.value() & 0x0F));
+    encoded.push_back(0x90 | CHANNEL_MPX8);
     encoded.push_back(note.value() & 0x7F);
     encoded.push_back(velocity.value() & 0x7F);
 }
 
 bool akai_mpx8::decode_note_on(
     const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
     integral<std::uint8_t, 0, 127>& note,
     integral<std::uint8_t, 0, 127>& velocity)
 {
@@ -65,8 +67,10 @@ bool akai_mpx8::decode_note_on(
     if ((encoded[0] & 0xF0) != 0x90) {
         return false;
     }
+    if ((encoded[0] & 0x0F) != CHANNEL_MPX8) {
+        return false;
+    }
 
-    channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     velocity = encoded[2] & 0x7F;
     return true;
@@ -74,7 +78,6 @@ bool akai_mpx8::decode_note_on(
 
 bool akai_mpx8::decode_note_aftertouch(
     const std::vector<std::uint8_t>& encoded,
-    integral<std::uint8_t, 0, 15>& channel,
     integral<std::uint8_t, 0, 127>& note,
     integral<std::uint8_t, 0, 127>& aftertouch)
 {
@@ -84,11 +87,13 @@ bool akai_mpx8::decode_note_aftertouch(
     if ((encoded[0] & 0xF0) != 0xA0) {
         return false;
     }
+    if ((encoded[0] & 0x0F) != CHANNEL_MPX8) {
+        return false;
+    }
     if ((encoded[1] | encoded[2]) & 0x80) {
         return false;
     }
 
-    channel = encoded[0] & 0x0F;
     note = encoded[1] & 0x7F;
     aftertouch = encoded[2] & 0x7F;
     return true;
@@ -152,24 +157,24 @@ bool akai_mpx8::decode_universal_inquiry(
         if (encoded.size() < _index + 3 + 2 + 2 + 4 + 1) {
             return false;
         }
-        manufacturer = (static_cast<std::uint32_t>(encoded[_index]) << 16) | (static_cast<std::uint32_t>(encoded[_index + 1]) << 8) | static_cast<std::uint32_t>(encoded[_index + 2]);
+        manufacturer = ((encoded[_index]) << 16) | ((encoded[_index + 1]) << 8) | (encoded[_index + 2]);
         _index += 3;
 
     } else {
         if (encoded.size() < _index + 1 + 2 + 2 + 4 + 1) {
             return false;
         }
-        manufacturer = static_cast<std::uint32_t>(encoded[_index]);
+        manufacturer = encoded[_index];
         _index += 1;
     }
 
-    family = static_cast<std::uint32_t>(encoded[_index] | (encoded[_index + 1] << 8));
+    family = encoded[_index] | (encoded[_index + 1] << 8);
     _index += 2;
 
-    model = static_cast<std::uint32_t>(encoded[_index] | (encoded[_index + 1] << 8));
+    model = encoded[_index] | (encoded[_index + 1] << 8);
     _index += 2;
 
-    version = (static_cast<std::uint32_t>(encoded[_index]) << 24) | (static_cast<std::uint32_t>(encoded[_index + 1]) << 16) | (static_cast<std::uint32_t>(encoded[_index + 2]) << 8) | static_cast<std::uint32_t>(encoded[_index + 3]);
+    version = ((encoded[_index]) << 24) | ((encoded[_index + 1]) << 16) | ((encoded[_index + 2]) << 8) | encoded[_index + 3];
     return true;
 }
 }

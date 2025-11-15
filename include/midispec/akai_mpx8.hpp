@@ -15,59 +15,49 @@ struct akai_mpx8 {
 
     /// @brief Encodes a note off message
     /// @param encoded Vector to append the encoded message to
-    /// @param channel Target channel number. In range [0, 15]
     /// @param note MIDI note. In range [0, 127]
     /// @param velocity MIDI velocity. In range [0, 127]
     static void encode_note_off(
         std::vector<std::uint8_t>& encoded,
-        const integral<std::uint8_t, 0, 15> channel,
         const integral<std::uint8_t, 0, 127> note,
         const integral<std::uint8_t, 0, 127> velocity);
 
     /// @brief Decodes a note off message
     /// @param encoded Vector to read the encoded message from
-    /// @param channel Target channel number. In range [0, 15]
     /// @param note MIDI note. In range [0, 127]
     /// @param velocity MIDI velocity. In range [0, 127]
     /// @return true on success
     static bool decode_note_off(
         const std::vector<std::uint8_t>& encoded,
-        integral<std::uint8_t, 0, 15>& channel,
         integral<std::uint8_t, 0, 127>& note,
         integral<std::uint8_t, 0, 127>& velocity);
 
     /// @brief Encodes a note on message
     /// @param encoded Vector to append the encoded message to
-    /// @param channel Target channel number. In range [0, 15]
     /// @param note MIDI note. In range [0, 127]
     /// @param velocity MIDI velocity. In range [0, 127]
     static void encode_note_on(
         std::vector<std::uint8_t>& encoded,
-        const integral<std::uint8_t, 0, 15> channel,
         const integral<std::uint8_t, 0, 127> note,
         const integral<std::uint8_t, 0, 127> velocity);
 
     /// @brief Decodes a note on message
     /// @param encoded Vector to read the encoded message from
-    /// @param channel Target channel number. In range [0, 15]
     /// @param note MIDI note. In range [0, 127]
     /// @param velocity MIDI velocity. In range [0, 127]
     /// @return true on success
     static bool decode_note_on(
         const std::vector<std::uint8_t>& encoded,
-        integral<std::uint8_t, 0, 15>& channel,
         integral<std::uint8_t, 0, 127>& note,
         integral<std::uint8_t, 0, 127>& velocity);
 
     /// @brief Decodes a note aftertouch message
     /// @param encoded Vector to read the encoded message from
-    /// @param channel Target channel number. In range [0, 15]
     /// @param note MIDI note. In range [0, 127]
     /// @param after_touch MIDI aftertouch. In range [0, 127]
     /// @return true on success
     static bool decode_note_aftertouch(
         const std::vector<std::uint8_t>& encoded,
-        integral<std::uint8_t, 0, 15>& channel,
         integral<std::uint8_t, 0, 127>& note,
         integral<std::uint8_t, 0, 127>& aftertouch);
 

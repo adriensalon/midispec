@@ -29,6 +29,12 @@ namespace detail {
     struct has_note_off_encode_no_velocity<T, std::void_t<decltype(T::encode_note_off(std::declval<std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>>(), std::declval<integral<std::uint8_t, 0, 127>>()))>> : std::true_type {};
 
     template <typename T, typename = void>
+    struct has_note_off_encode_no_channel : std::false_type {};
+
+    template <typename T>
+    struct has_note_off_encode_no_channel<T, std::void_t<decltype(T::encode_note_off(std::declval<std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>>(), std::declval<integral<std::uint8_t, 0, 127>>()))>> : std::true_type {};
+
+    template <typename T, typename = void>
     struct has_note_off_encode_no_velocity_no_channel : std::false_type {};
 
     template <typename T>
@@ -41,7 +47,7 @@ namespace detail {
     struct has_note_off_encode_full<T, std::void_t<decltype(T::encode_note_off(std::declval<std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>>(), std::declval<integral<std::uint8_t, 0, 127>>(), std::declval<integral<std::uint8_t, 0, 127>>()))>> : std::true_type {};
 
     template <typename T>
-    struct has_note_off_encode : std::bool_constant<has_note_off_encode_no_velocity<T>::value || has_note_off_encode_no_velocity_no_channel<T>::value || has_note_off_encode_full<T>::value> {};
+    struct has_note_off_encode : std::bool_constant<has_note_off_encode_no_velocity<T>::value || has_note_off_encode_no_channel<T>::value || has_note_off_encode_no_velocity_no_channel<T>::value || has_note_off_encode_full<T>::value> {};
 
     template <typename T, typename = void>
     struct has_note_off_decode_no_velocity : std::false_type {};
@@ -53,7 +59,13 @@ namespace detail {
     struct has_note_off_decode_no_channel : std::false_type {};
 
     template <typename T>
-    struct has_note_off_decode_no_channel<T, std::void_t<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>()))>> : std::bool_constant<std::is_same<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>())), bool>::value> {};
+    struct has_note_off_decode_no_channel<T, std::void_t<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>()))>> : std::bool_constant<std::is_same<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>())), bool>::value> {};
+
+    template <typename T, typename = void>
+    struct has_note_off_decode_no_velocity_no_channel : std::false_type {};
+
+    template <typename T>
+    struct has_note_off_decode_no_velocity_no_channel<T, std::void_t<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>()))>> : std::bool_constant<std::is_same<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>())), bool>::value> {};
 
     template <typename T, typename = void>
     struct has_note_off_decode_full : std::false_type {};
@@ -62,7 +74,7 @@ namespace detail {
     struct has_note_off_decode_full<T, std::void_t<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>()))>> : std::bool_constant<std::is_same<decltype(T::decode_note_off(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>())), bool>::value> {};
 
     template <typename T>
-    struct has_note_off_decode : std::bool_constant<has_note_off_decode_no_velocity<T>::value || has_note_off_decode_no_channel<T>::value || has_note_off_decode_full<T>::value> {};
+    struct has_note_off_decode : std::bool_constant<has_note_off_decode_no_velocity<T>::value || has_note_off_decode_no_channel<T>::value || has_note_off_decode_no_velocity_no_channel<T>::value || has_note_off_decode_full<T>::value> {};
 
     template <capability C, typename T>
     struct has_note_off_capability : std::false_type {};
@@ -135,10 +147,19 @@ namespace detail {
     struct has_note_aftertouch_encode<T, std::void_t<decltype(T::encode_note_aftertouch(std::declval<std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>>(), std::declval<integral<std::uint8_t, 0, 127>>(), std::declval<integral<std::uint8_t, 0, 127>>()))>> : std::true_type {};
 
     template <typename T, typename = void>
-    struct has_note_aftertouch_decode : std::false_type {};
+    struct has_note_aftertouch_decode_no_channel : std::false_type {};
 
     template <typename T>
-    struct has_note_aftertouch_decode<T, std::void_t<decltype(T::decode_note_aftertouch(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>()))>> : std::bool_constant<std::is_same<decltype(T::decode_note_aftertouch(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>())), bool>::value> {};
+    struct has_note_aftertouch_decode_no_channel<T, std::void_t<decltype(T::decode_note_aftertouch(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>()))>> : std::bool_constant<std::is_same<decltype(T::decode_note_aftertouch(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>())), bool>::value> {};
+
+    template <typename T, typename = void>
+    struct has_note_aftertouch_decode_full : std::false_type {};
+
+    template <typename T>
+    struct has_note_aftertouch_decode_full<T, std::void_t<decltype(T::decode_note_aftertouch(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>()))>> : std::bool_constant<std::is_same<decltype(T::decode_note_aftertouch(std::declval<const std::vector<std::uint8_t>&>(), std::declval<integral<std::uint8_t, 0, 15>&>(), std::declval<integral<std::uint8_t, 0, 127>&>(), std::declval<integral<std::uint8_t, 0, 127>&>())), bool>::value> {};
+
+    template <typename T>
+    struct has_note_aftertouch_decode : std::bool_constant<has_note_aftertouch_decode_no_channel<T>::value || has_note_aftertouch_decode_full<T>::value> {};
 
     template <capability C, typename T>
     struct has_note_aftertouch_capability : std::false_type {};
