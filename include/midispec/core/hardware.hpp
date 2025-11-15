@@ -72,22 +72,37 @@ protected:
         _midi_in = std::make_unique<RtMidiIn>();
         _midi_out = std::make_unique<RtMidiOut>();
 
-        const unsigned in_count = _midi_in->getPortCount();
-        const unsigned out_count = _midi_out->getPortCount();
-        if (0 >= in_count)
-            throw std::runtime_error("Invalid input MIDI port");
-        if (1 >= out_count)
-            throw std::runtime_error("Invalid output MIDI port");
+        const std::size_t _in_count = _midi_in->getPortCount();
+        EXPECT_GT(_in_count, 0);
+        const std::size_t _out_count = _midi_out->getPortCount();
+        EXPECT_GT(_out_count, 0);
 
+        std::cout << "\nAvailable MIDI input ports:" << std::endl;
+        for (unsigned i = 0; i < _in_count; ++i) {
+            std::cout << "  [" << i << "] " << _midi_in->getPortName(i) << std::endl;
+        }
+        std::cout << "\nAvailable MIDI output ports:" << std::endl;
+        for (unsigned i = 0; i < _out_count; ++i) {
+            std::cout << "  [" << i << "] " << _midi_out->getPortName(i) << std::endl;
+        }
+        
         std::cout << std::endl;
-        std::cout << "Using input MIDI port " << _midi_in->getPortName(0) << "\n";
-        std::cout << "Using output MIDI port " << _midi_out->getPortName(1) << "\n";
-        std::cout << std::endl;
+        std::size_t _in_index = 0;
+        std::size_t _out_index = 0;
+        std::cout << "Select input port index: ";
+        std::cin >> _in_index;
+        EXPECT_LT(_in_index, _in_count);
+        std::cout << "Select output port index: ";
+        std::cin >> _out_index;
+        EXPECT_LT(_out_index, _out_count);
 
-        _midi_in->openPort(0);
+        std::cout << "\nUsing input: " << _midi_in->getPortName(_in_index) << "\n";
+        std::cout << "Using output: " << _midi_out->getPortName(_out_index) << "\n\n";
+
+        _midi_in->openPort(_in_index);
         _midi_in->ignoreTypes(false, true, true);
         _midi_in->setCallback(&gtest_hardware::midi_in_cb, nullptr);
-        _midi_out->openPort(1);
+        _midi_out->openPort(_out_index);
     }
 
     inline static void TearDownTestSuite()
